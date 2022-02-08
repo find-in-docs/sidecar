@@ -1,42 +1,35 @@
-syntax = "proto3"
-package messages
+syntax = "proto3";
+package messages;
 
-import "google/protobuf/oneof.proto"
-import "google/protobuf/duration.proto"
+import "google/protobuf/duration.proto";
+import "github.com/samirgadkari/sidecar/protos/common.proto";
 
 option go_package = "github.com/samirgadkari/sidecar/protos/go/messagespb";
 
 message Circuit {
-	uint8 FailureThreshold = 0;	
+	uint32 FailureThreshold = 1;
 }
 
 message Debounce {
-	google.protobuf.Duration Delay = 0;
+	google.protobuf.Duration Delay = 1;
 }
 
 message Retry {
-	uint16 Retries = 0;
-	google.protobuf.Duration Delay = 1;
+	uint32 Retries = 1;
+	google.protobuf.Duration Delay = 2;
 }
 
 message Limit {
 	oneof limit {
-		Circuit circuit = 0;
-		Debounce debounce = 1;
-		Retry retry = 2;
+		Circuit circuit = 1;
+		Debounce debounce = 2;
+		Retry retry = 3;
 	}
-}
-
-message Header {
-	string ServType = 1;
-	uint64 ServId = 2;
-	uint64 ReqId = 3;
-	uint16 MsgId = 4;
 }
 
 message RegistrationMsg {
 
-	Header header = 0;
-	repeated Limit limits = 1;
+	Header header = 1;
+	repeated Limit limits = 2;
 }
 
