@@ -1,6 +1,8 @@
 syntax = "proto3";
 package messages;
 
+option go_package = "github.com/samirgadkari/sidecar/protos/go/commonpb";
+
 enum ServType {
 	SIDECAR = 0;
 	IMPORT = 1;
