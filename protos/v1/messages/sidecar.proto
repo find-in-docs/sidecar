@@ -1,0 +1,88 @@
+syntax = "proto3";
+package messages;
+
+import "google/protobuf/duration.proto";
+import "protos/v1/messages/common.proto";
+
+option go_package = "github.com/samirgadkari/sidecar/protos/v1/messages";
+
+message RegistrationMsg {
+
+	Header header = 1;
+
+	message Circuit {
+		uint32 failureThreshold = 1;
+	}
+
+	message Debounce {
+		google.protobuf.Duration delay = 1;
+	}
+
+	message Retry {
+		uint32 Retries = 1;
+		google.protobuf.Duration delay = 2;
+	}
+
+	message Limit {
+		oneof limit {
+			Circuit circuit = 1;
+			Debounce debounce = 2;
+			Retry retry = 3;
+		}
+	}
+
+	repeated Limit limits = 2;
+}
+
+message PubMsg {
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message SubMsg {
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message LogMsg {
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message RegistrationResponse {
+
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message SubResponse {
+
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message RecvResponse {
+
+	Header header = 1;
+	bytes data = 2;
+}
+
+message PubResponse {
+
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+message LogResponse {
+
+	ResponseHeader header = 1;
+	string msg = 2;
+}
+
+service Sidecar {
+	rpc Register (RegistrationMsg) returns (RegistrationResponse);
+	rpc Sub (SubMsg) returns (SubResponse);
+	rpc Recv (Empty) returns (RecvResponse);
+	rpc Pub (PubMsg) returns (PubResponse);
+	rpc Log (LogMsg) returns (LogResponse);
+}
