@@ -2,7 +2,7 @@ syntax = "proto3";
 package messages;
 
 import "google/protobuf/duration.proto";
-import "protos/v1/messages/common.proto";
+import "v1/messages/common.proto";
 
 option go_package = "github.com/samirgadkari/sidecar/protos/v1/messages";
 
