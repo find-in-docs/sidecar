@@ -33,32 +33,35 @@ The server will connect, and run some tests between two sidecar instances`,
 			os.Exit(-1)
 		}
 
-		wg := new(sync.WaitGroup)
-		wg.Add(2)
+		var wg sync.WaitGroup
+		numMsgs := 10
+		wg.Add(numMsgs)
 
 		msgs := make(chan *nats.Msg, 10)
 
-		_, err = c.Subscribe("foo", func(msg *nats.Msg) {
+		_, err = c.Subscribe("client", func(msg *nats.Msg) {
 
 			fmt.Printf("Server received msg: %s\n  on topic: %s\n",
 				string(msg.Data), msg.Subject)
 
 			msgs <- msg
-			wg.Done()
 
+			wg.Done()
 		})
 		if err != nil {
 			fmt.Printf("Error subscribing to NATS server: %v\n", err)
 			os.Exit(-1)
 		}
 
-		err = c.Publish("foo", []byte("++++ testing ++++"))
-		if err != nil {
-			fmt.Printf("Error publishing to NATS server: %v\n", err)
-			os.Exit(-1)
+		for i := 0; i < numMsgs; i++ {
+
+			err = c.Publish("server", []byte("++++ testing ++++"))
+			if err != nil {
+				fmt.Printf("Error publishing to NATS server: %v\n", err)
+				os.Exit(-1)
+			}
+			fmt.Printf("Server sent message\n")
 		}
-		fmt.Printf("Server sent message\n")
-		// wg.Done()
 		wg.Wait()
 	},
 }
