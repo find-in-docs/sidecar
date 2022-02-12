@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.4
-// source: v1/messages/sidecar.proto
+// source: messages/sidecar.proto
 
 package messages
 
@@ -245,5 +245,5 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "v1/messages/sidecar.proto",
+	Metadata: "messages/sidecar.proto",
 }

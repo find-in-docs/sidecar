@@ -27,20 +27,14 @@ message ResponseHeader {
 
 message Empty {}
 
-message Limit {
-	oneof limit {
-		uint32 circuitFailureThreshold = 1;
-		google.protobuf.Duration debounceDelay = 2;
-		uint32 retryNum = 3;
-		google.protobuf.Duration retryDelay = 4;
-	}
-}
-
 message RegistrationMsg {
 
 	Header header = 1;
 
-	repeated Limit limits = 2;
+	optional uint32 circuitFailureThreshold = 2;
+	optional google.protobuf.Duration debounceDelay = 3;
+	optional uint32 retryNum = 4;
+	optional google.protobuf.Duration retryDelay = 5;
 }
 
 message PubMsg {
