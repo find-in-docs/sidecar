@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	conn "github.com/samirgadkari/sidecar/pkg/connection"
 	"github.com/samirgadkari/sidecar/pkg/connection/config"
@@ -21,17 +22,38 @@ import (
 
 type server struct {
 	messages.UnimplementedSidecarServer
+	thisServType string
+	thisServId   []byte
 }
 
 func (s *server) Register(ctx context.Context, in *messages.RegistrationMsg) (*messages.RegistrationResponse, error) {
 	fmt.Printf("Received RegistrationMsg: %v\n", in)
 
-	header := messages.ResponseHeader{
+	rspHeader := messages.ResponseHeader{
 		Status: uint32(messages.Status_OK),
 	}
+
+	uuid := uuid.New()
+	servId, err := uuid.MarshalText()
+	if err != nil {
+		fmt.Printf("Error converting UUID: %v to text\n\terr: %v\n", uuid, err)
+		os.Exit(-1)
+	}
+
+	s.thisServType = in.Header.SrcServType
+	s.thisServId = servId
+
+	header := messages.Header{
+		SrcServType: "sidecarService",
+		DstServType: in.Header.SrcServType,
+		ServId:      servId,
+		MsgId:       0,
+	}
+
 	regRsp := &messages.RegistrationResponse{
-		Header: &header,
-		Msg:    "OK",
+		Header:    &header,
+		RspHeader: &rspHeader,
+		Msg:       "OK",
 	}
 	fmt.Printf("Sending regRsp: %v\n", *regRsp)
 

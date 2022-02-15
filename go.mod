@@ -3,6 +3,7 @@ module github.com/samirgadkari/sidecar
 go 1.17
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats.go v1.13.1-0.20220121202836-972a071d373d
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
