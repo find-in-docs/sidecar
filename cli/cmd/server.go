@@ -9,10 +9,9 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 
 	"github.com/nats-io/nats.go"
-	"github.com/samirgadkari/sidecar/pkg/connection"
+	conn "github.com/samirgadkari/sidecar/pkg/connection"
 	"github.com/samirgadkari/sidecar/pkg/connection/config"
 	"github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/cobra"
@@ -30,10 +29,13 @@ func (s *server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 	header := messages.ResponseHeader{
 		Status: uint32(messages.Status_OK),
 	}
-	return &messages.RegistrationResponse{
+	regRsp := &messages.RegistrationResponse{
 		Header: &header,
 		Msg:    "OK",
-	}, nil
+	}
+	fmt.Printf("Sending regRsp: %v\n", *regRsp)
+
+	return regRsp, nil
 }
 
 // serverCmd represents the server command
@@ -46,10 +48,9 @@ The server will connect, and run some tests between two sidecar instances`,
 
 		config.LoadConfig()
 
-		c, err := connection.New(viper.GetString("natsUrl"))
+		c, err := conn.New(viper.GetString("natsUrl"))
 
 		if err != nil {
-			fmt.Printf("Error connecting to NATS server: %v\n", err)
 			os.Exit(-1)
 		}
 
@@ -65,15 +66,13 @@ The server will connect, and run some tests between two sidecar instances`,
 			s := grpc.NewServer()
 			messages.RegisterSidecarServer(s, &server{})
 
-			fmt.Printf("Server listening at %v", lis.Addr())
+			fmt.Printf("Server listening at %v\n", lis.Addr())
 			if err = s.Serve(lis); err != nil {
 				fmt.Print("Failed to serve: %v\n", err)
 			}
 		}()
 
-		var wg sync.WaitGroup
 		numMsgs := 10
-		wg.Add(numMsgs)
 
 		msgs := make(chan *nats.Msg, 10)
 
@@ -84,7 +83,6 @@ The server will connect, and run some tests between two sidecar instances`,
 
 			msgs <- msg
 
-			wg.Done()
 		})
 		if err != nil {
 			fmt.Printf("Error subscribing to NATS server: %v\n", err)
@@ -100,7 +98,8 @@ The server will connect, and run some tests between two sidecar instances`,
 			}
 			fmt.Printf("Server sent message\n")
 		}
-		wg.Wait()
+
+		conn.BlockForever()
 	},
 }
 
