@@ -8,7 +8,7 @@ option go_package = "github.com/samirgadkari/sidecar/protos/v1/messages";
 message Header {
 	string srcServType = 1;
 	string dstServType = 2;
-	uint64 servId = 3;
+	bytes servId = 3;
 	uint32 msgId = 4;
 }
 
@@ -38,24 +38,25 @@ message RegistrationMsg {
 }
 
 message PubMsg {
-	ResponseHeader header = 1;
+	Header header = 1;
 	string msg = 2;
 }
 
 message SubMsg {
-	ResponseHeader header = 1;
+	Header header = 1;
 	string msg = 2;
 }
 
 message LogMsg {
-	ResponseHeader header = 1;
+	Header header = 1;
 	string msg = 2;
 }
 
 message RegistrationResponse {
 
-	ResponseHeader header = 1;
-	string msg = 2;
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
 }
 
 message SubResponse {
