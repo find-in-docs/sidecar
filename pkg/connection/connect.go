@@ -22,7 +22,7 @@ func New(url string) (*Conn, error) {
 	}) */
 
 	if err != nil {
-		fmt.Printf("Error connecting to NATS server !!\n")
+		fmt.Printf("Error connecting to NATS server.\n\terr: %v", err)
 		return nil, err
 	}
 
@@ -53,4 +53,8 @@ func (c *Conn) Publish(t string, data []byte) error {
 	}
 
 	return nil
+}
+
+func BlockForever() {
+	select {} // An empty select blocks forever.
 }
