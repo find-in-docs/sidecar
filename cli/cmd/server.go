@@ -20,10 +20,24 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	thisServType = "sidecarService"
+)
+
 type server struct {
 	messages.UnimplementedSidecarServer
-	thisServType string
-	thisServId   []byte
+	header *messages.Header
+}
+
+func servId() []byte {
+	uuid := uuid.New()
+	servId, err := uuid.MarshalText()
+	if err != nil {
+		fmt.Printf("Error converting UUID: %v to text\n\terr: %v\n", servId, err)
+		os.Exit(-1)
+	}
+
+	return servId
 }
 
 func (s *server) Register(ctx context.Context, in *messages.RegistrationMsg) (*messages.RegistrationResponse, error) {
@@ -33,31 +47,39 @@ func (s *server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 		Status: uint32(messages.Status_OK),
 	}
 
-	uuid := uuid.New()
-	servId, err := uuid.MarshalText()
-	if err != nil {
-		fmt.Printf("Error converting UUID: %v to text\n\terr: %v\n", uuid, err)
-		os.Exit(-1)
-	}
-
-	s.thisServType = in.Header.SrcServType
-	s.thisServId = servId
-
 	header := messages.Header{
 		SrcServType: "sidecarService",
 		DstServType: in.Header.SrcServType,
-		ServId:      servId,
+		ServId:      servId(),
 		MsgId:       0,
 	}
+	s.header = &header
 
 	regRsp := &messages.RegistrationResponse{
 		Header:    &header,
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
-	fmt.Printf("Sending regRsp: %v\n", *regRsp)
+	fmt.Printf("Sending regRsp: %#v\n", *regRsp)
 
 	return regRsp, nil
+}
+
+func (s *server) Log(ctx context.Context, in *messages.LogMsg) (*messages.LogResponse, error) {
+
+	fmt.Printf("Received LogMsg: %#v\n", in)
+
+	rspHeader := messages.ResponseHeader{
+		Status: uint32(messages.Status_OK),
+	}
+
+	logRsp := &messages.LogResponse{
+		Header: &rspHeader,
+		Msg:    "OK",
+	}
+	fmt.Printf("Sending logRsp: %#v\n", *logRsp)
+
+	return logRsp, nil
 }
 
 // serverCmd represents the server command
