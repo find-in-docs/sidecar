@@ -39,7 +39,7 @@ func InitGRPCconn(srv *Server) {
 
 		fmt.Printf("Server listening at %v\n", lis.Addr())
 		if err = s.Serve(lis); err != nil {
-			fmt.Print("Failed to serve: %v\n", err)
+			fmt.Printf("Failed to serve: %v\n", err)
 		}
 	}()
 }
