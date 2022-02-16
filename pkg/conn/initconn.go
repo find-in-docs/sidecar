@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func InitNATSConn() (*Conn, error) {
+func InitNATSconn() (*Conn, error) {
 
 	c, err := NewNATSConn(viper.GetString("natsUrl"))
 
@@ -53,7 +53,7 @@ func Initconns() (*Conn, *Server, error) {
 
 	InitGRPCconn(srv)
 
-	natsConn, err := InitNATSConn()
+	natsConn, err := InitNATSconn()
 	if err != nil {
 		fmt.Printf("Error initializing NATS conn:\n\terr: %v\n", err)
 		return nil, nil, err

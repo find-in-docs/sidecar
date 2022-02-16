@@ -25,7 +25,7 @@ The client will connect, and run some tests between two sidecar instances.`,
 
 		config.LoadConfig()
 
-		c, err := conn.InitNATSConn()
+		c, err := conn.InitNATSconn()
 
 		if err != nil {
 			fmt.Printf("Error connecting to NATS server: %v\n", err)
