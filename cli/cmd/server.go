@@ -30,7 +30,7 @@ The server will connect, and run some tests between two sidecar instances`,
 			return
 		}
 
-		conn.InitLogs(srv)
+		conn.InitLogs(natsConn, srv)
 
 		numMsgs := 10
 

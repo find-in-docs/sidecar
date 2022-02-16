@@ -2,6 +2,7 @@ package conn
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/samirgadkari/sidecar/protos/v1/messages"
 )
@@ -11,21 +12,25 @@ const (
 )
 
 type Logs struct {
-	logs chan *messages.LogMsg
-	done chan struct{}
+	logs     chan *messages.LogMsg
+	done     chan struct{}
+	msgId    uint32
+	natsConn *Conn
 }
 
-func InitLogs(srv *Server) {
+func InitLogs(natsConn *Conn, srv *Server) {
 
 	logs := make(chan *messages.LogMsg, logChSize)
 	done := make(chan struct{})
 
-	SendLogsToMsgQueue(logs, done)
-
 	srv.Logs = &Logs{
-		logs: logs,
-		done: done,
+		logs:     logs,
+		done:     done,
+		msgId:    1,
+		natsConn: natsConn,
 	}
+
+	SendLogsToMsgQueue(srv.Logs, done)
 }
 
 func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogResponse, error) {
@@ -42,20 +47,32 @@ func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogResponse, error
 		Header: &rspHeader,
 		Msg:    "OK",
 	}
-	fmt.Printf("Sending logRsp: %#v\n", *logRsp)
 
 	return logRsp, nil
 }
 
-func SendLogsToMsgQueue(logs chan *messages.LogMsg, done chan struct{}) {
+func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 
 	var l *messages.LogMsg
+	var header *messages.Header
+	var err error
 
 	go func() {
 		for {
 			select {
-			case l = <-logs:
+			case l = <-logs.logs:
 				fmt.Printf("Got log msg:\n\t%v\n", l)
+
+				header = l.GetHeader()
+				header.MsgId = logs.msgId
+				logs.msgId += 1
+
+				err = logs.natsConn.Publish("logs", []byte(l.String()))
+				if err != nil {
+					fmt.Printf("Error publishing to NATS server: %v\n", err)
+					os.Exit(-1)
+				}
+				fmt.Printf("Server sent message\n")
 
 			case <-done:
 				// drain logs channel here before breaking out of the forever loop
