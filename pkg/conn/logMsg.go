@@ -55,7 +55,10 @@ func SendLogsToMsgQueue(logs chan *messages.LogMsg, done chan struct{}) {
 		for {
 			select {
 			case l = <-logs:
+				fmt.Printf("Got log msg:\n\t%v\n", l)
+
 			case <-done:
+				// drain logs channel here before breaking out of the forever loop
 			}
 		}
 	}()
