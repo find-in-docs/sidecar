@@ -1,4 +1,4 @@
-package connection
+package conn
 
 const (
 	maxInputs = 1000

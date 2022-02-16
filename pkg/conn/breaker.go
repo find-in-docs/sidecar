@@ -3,7 +3,7 @@
 //   - This code runs on the sidecar service, so that it does not have to be duplicated
 //     across all services. For that reason, the Circuit function type has been changed
 //     to take a message and return a message.
-package connection
+package conn
 
 import (
 	"context"

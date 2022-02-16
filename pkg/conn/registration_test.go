@@ -1,4 +1,4 @@
-package connection
+package conn
 
 import (
 	"testing"
@@ -41,7 +41,7 @@ func TestRegsitration(t *testing.T) {
 		},
 	}
 
-	if err := connection.RegisterMsg(&rMsg); err == nil {
+	if err := conn.RegisterMsg(&rMsg); err == nil {
 		t.Errorf("Failed. RegisterMsg returned err: %v\n", err)
 	}
 

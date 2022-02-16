@@ -1,4 +1,4 @@
-package connection
+package conn
 
 type ServiceTyp uint32
 type ServiceIdTyp uint64

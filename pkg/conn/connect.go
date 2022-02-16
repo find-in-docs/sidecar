@@ -1,4 +1,4 @@
-package connection
+package conn
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ type Conn struct {
 	Url string
 }
 
-func New(url string) (*Conn, error) {
+func NewNATSConn(url string) (*Conn, error) {
 
 	nc, err := nats.Connect(url) /* nats.RetryOnFailedConnect(true),
 	nats.MaxReconnects(10),

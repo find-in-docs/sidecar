@@ -10,10 +10,9 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
-	"github.com/samirgadkari/sidecar/pkg/connection"
-	"github.com/samirgadkari/sidecar/pkg/connection/config"
+	"github.com/samirgadkari/sidecar/pkg/conn"
+	"github.com/samirgadkari/sidecar/pkg/conn/config"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // clientCmd represents the client command
@@ -26,7 +25,7 @@ The client will connect, and run some tests between two sidecar instances.`,
 
 		config.LoadConfig()
 
-		c, err := connection.New(viper.GetString("natsUrl"))
+		c, err := conn.InitNATSConn()
 
 		if err != nil {
 			fmt.Printf("Error connecting to NATS server: %v\n", err)
