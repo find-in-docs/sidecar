@@ -96,13 +96,13 @@ func (sc *SC) Register() error {
 		return err
 	}
 
-	fmt.Printf("Registration message sent\n\tRegRsp:\n\t\tHeader: %v\n\t",
+	fmt.Printf("Registration message sent\n\tRegRsp:\n\t\tHeader: %v\n\t\t",
 		rRsp.GetHeader())
-	fmt.Printf("CircuitFailureThreshold: %d\n\t, DebounceDelay: %d\n\t",
-		rMsg.CircuitFailureThreshold, rMsg.DebounceDelay)
-	fmt.Printf("RetryNum: %d\n\t, RetryDelay: %d\n\t",
-		rMsg.RetryNum, rMsg.RetryDelay)
-	fmt.Printf("Status: %d\n\tMsg: %s\n", rRsp.RspHeader.Status, rRsp.Msg)
+	fmt.Printf("CircuitFailureThreshold: %d\n\t\tDebounceDelay: %d\n\t\t",
+		rMsg.GetCircuitFailureThreshold(), rMsg.GetDebounceDelay())
+	fmt.Printf("RetryNum: %d\n\t\tRetryDelay: %d\n\t\t",
+		rMsg.GetRetryNum(), rMsg.GetRetryDelay())
+	fmt.Printf("Status: %d\n\t\tMsg: %s\n", rRsp.RspHeader.Status, rRsp.Msg)
 
 	sc.header = &header
 	sc.header.SrcServType = rRsp.Header.DstServType
