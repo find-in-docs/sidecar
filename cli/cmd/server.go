@@ -19,7 +19,7 @@ const (
 
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
-	Use:   "server",
+	Use:   "serve",
 	Short: "Start a server to talk to a NATS client and listen to GRPC requests.",
 	Long: `Start a server to talk to a NATS client and listen to GRPC requests. 
 The server will connect, and run some tests between two sidecar instances`,

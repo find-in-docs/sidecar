@@ -13,7 +13,7 @@ build: | ${EXEDIR}
 	go build -o ${BIN_NAME} cli/main.go
 
 run: build
-	./${BIN_NAME} server
+	./${BIN_NAME} serve
 
 clean:
 	go clean
