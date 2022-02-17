@@ -37,7 +37,7 @@ func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogResponse, error
 
 	l.logs <- in
 
-	fmt.Printf("Received LogMsg: %#v\n", in)
+	fmt.Printf("Received LogMsg: %v\n", in)
 
 	rspHeader := messages.ResponseHeader{
 		Status: uint32(messages.Status_OK),

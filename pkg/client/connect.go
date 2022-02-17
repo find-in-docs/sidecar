@@ -96,8 +96,13 @@ func (sc *SC) Register() error {
 		return err
 	}
 
-	fmt.Printf("Registration message sent\n\tRegRsp: %v\n\tStatus: %d\n\tMsg: %s\n",
-		*rRsp, rRsp.RspHeader.Status, rRsp.Msg)
+	fmt.Printf("Registration message sent\n\tRegRsp:\n\t\tHeader: %v\n\t",
+		rRsp.GetHeader())
+	fmt.Printf("CircuitFailureThreshold: %d\n\t, DebounceDelay: %d\n\t",
+		rMsg.CircuitFailureThreshold, rMsg.DebounceDelay)
+	fmt.Printf("RetryNum: %d\n\t, RetryDelay: %d\n\t",
+		rMsg.RetryNum, rMsg.RetryDelay)
+	fmt.Printf("Status: %d\n\tMsg: %s\n", rRsp.RspHeader.Status, rRsp.Msg)
 
 	sc.header = &header
 	sc.header.SrcServType = rRsp.Header.DstServType
@@ -117,13 +122,13 @@ func (sc *SC) Log(msg *string) error {
 
 	logRsp, err := sc.client.Log(context.Background(), &logMsg)
 	if err != nil {
-		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", msg, err)
+		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", *msg, err)
 		os.Exit(-1)
 	}
 
 	if logRsp.Header.Status != uint32(messages.Status_OK) {
 		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
-			msg, logRsp.Header.Status)
+			*msg, logRsp.Header.Status)
 		os.Exit(-1)
 	}
 

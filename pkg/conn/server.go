@@ -49,7 +49,7 @@ func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
-	fmt.Printf("Sending regRsp: %#v\n", *regRsp)
+	fmt.Printf("Sending regRsp: %v\n", *regRsp)
 
 	return regRsp, nil
 }
