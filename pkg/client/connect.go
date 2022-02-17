@@ -107,3 +107,28 @@ func (sc *SC) Register() error {
 
 	return nil
 }
+
+func (sc *SC) Log(msg *string) error {
+
+	logMsg := messages.LogMsg{
+		Header: sc.header,
+		Msg:    *msg,
+	}
+
+	logRsp, err := sc.client.Log(context.Background(), &logMsg)
+	if err != nil {
+		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", msg, err)
+		os.Exit(-1)
+	}
+
+	if logRsp.Header.Status != uint32(messages.Status_OK) {
+		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
+			msg, logRsp.Header.Status)
+		os.Exit(-1)
+	}
+
+	fmt.Printf("Log msg sent\n\tLogRsp: %v\n\tStatus: %d\n\tMsg: %s\n",
+		logRsp, logRsp.Header.Status, logRsp.Msg)
+
+	return nil
+}
