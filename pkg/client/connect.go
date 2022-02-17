@@ -45,7 +45,7 @@ func Connect(serverAddr string) (*grpc.ClientConn, *SC, error) {
 	err = sc.Register()
 	if err != nil {
 		fmt.Printf("Error registering client:\n\terr: %v\n", err)
-		os.Exit(-1_
+		os.Exit(-1)
 	}
 
 	return conn, sc, nil
