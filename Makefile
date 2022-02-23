@@ -5,10 +5,16 @@ BIN_NAME=./bin/sc
 
 # This .PHONY target will ignore any file that exists with the same name as the target
 # in your makefile, and build it regardless.
-.PHONY: all build run clean
+.PHONY: all init build run clean
 
 # The all target is the default target when make is called without any arguments.
-all: run
+all: clean | run
+
+init:
+	go mod init github.com/samirgadkari/sidecar
+	mkdir cli
+	cd cli && cobra init
+	cd cli && cobra add serve
 
 ${EXEDIR}:
 	mkdir ${EXEDIR}
