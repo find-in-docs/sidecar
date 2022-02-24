@@ -126,14 +126,14 @@ func (sc *SC) Log(msg *string) error {
 		os.Exit(-1)
 	}
 
-	if logRsp.Header.Status != uint32(messages.Status_OK) {
+	if logRsp.ResponseHeader.Status != uint32(messages.Status_OK) {
 		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
-			*msg, logRsp.Header.Status)
+			*msg, logRsp.ResponseHeader.Status)
 		os.Exit(-1)
 	}
 
 	fmt.Printf("Log msg sent\n\tLogRsp: %v\n\tStatus: %d\n\tMsg: %s\n",
-		logRsp, logRsp.Header.Status, logRsp.Msg)
+		logRsp, logRsp.ResponseHeader.Status, logRsp.Msg)
 
 	return nil
 }
