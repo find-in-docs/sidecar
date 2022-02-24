@@ -39,13 +39,22 @@ func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogMsgResponse, er
 
 	fmt.Printf("Received LogMsg: %v\n", in)
 
+	srcHeader := in.GetHeader()
+	header := messages.Header{
+		DstServType: srcHeader.GetSrcServType(),
+		SrcServType: srcHeader.GetDstServType(),
+		ServId:      srcHeader.GetServId(),
+		MsgId:       0,
+	}
+
 	rspHeader := messages.ResponseHeader{
 		Status: uint32(messages.Status_OK),
 	}
 
 	logRsp := &messages.LogMsgResponse{
-		Header: &rspHeader,
-		Msg:    "OK",
+		Header:    &header,
+		RspHeader: &rspHeader,
+		Msg:       "OK",
 	}
 
 	return logRsp, nil
