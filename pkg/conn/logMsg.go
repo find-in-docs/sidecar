@@ -33,7 +33,7 @@ func InitLogs(natsConn *Conn, srv *Server) {
 	SendLogsToMsgQueue(srv.Logs, done)
 }
 
-func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogResponse, error) {
+func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogMsgResponse, error) {
 
 	l.logs <- in
 
@@ -43,7 +43,7 @@ func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogResponse, error
 		Status: uint32(messages.Status_OK),
 	}
 
-	logRsp := &messages.LogResponse{
+	logRsp := &messages.LogMsgResponse{
 		Header: &rspHeader,
 		Msg:    "OK",
 	}

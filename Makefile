@@ -16,6 +16,11 @@ init:
 	cd cli && cobra init
 	cd cli && cobra add serve
 
+genstubs:
+	protoc --go_out=. --go_opt=paths=source_relative \
+	       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	       protos/v1/messages/sidecar.proto
+
 ${EXEDIR}:
 	mkdir ${EXEDIR}
 

@@ -18,11 +18,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SidecarClient interface {
-	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationResponse, error)
-	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubResponse, error)
-	Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*RecvResponse, error)
-	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubResponse, error)
-	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogResponse, error)
+	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
+	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
+	Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SubTopicResponse, error)
+	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
+	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error)
 }
 
 type sidecarClient struct {
@@ -33,8 +33,8 @@ func NewSidecarClient(cc grpc.ClientConnInterface) SidecarClient {
 	return &sidecarClient{cc}
 }
 
-func (c *sidecarClient) Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationResponse, error) {
-	out := new(RegistrationResponse)
+func (c *sidecarClient) Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error) {
+	out := new(RegistrationMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func (c *sidecarClient) Register(ctx context.Context, in *RegistrationMsg, opts 
 	return out, nil
 }
 
-func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubResponse, error) {
-	out := new(SubResponse)
+func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error) {
+	out := new(SubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Sub", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -51,8 +51,8 @@ func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*RecvResponse, error) {
-	out := new(RecvResponse)
+func (c *sidecarClient) Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SubTopicResponse, error) {
+	out := new(SubTopicResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Recv", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -60,8 +60,8 @@ func (c *sidecarClient) Recv(ctx context.Context, in *Empty, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubResponse, error) {
-	out := new(PubResponse)
+func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error) {
+	out := new(PubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Pub", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -69,8 +69,8 @@ func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogResponse, error) {
-	out := new(LogResponse)
+func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error) {
+	out := new(LogMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Log", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -82,11 +82,11 @@ func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOp
 // All implementations must embed UnimplementedSidecarServer
 // for forward compatibility
 type SidecarServer interface {
-	Register(context.Context, *RegistrationMsg) (*RegistrationResponse, error)
-	Sub(context.Context, *SubMsg) (*SubResponse, error)
-	Recv(context.Context, *Empty) (*RecvResponse, error)
-	Pub(context.Context, *PubMsg) (*PubResponse, error)
-	Log(context.Context, *LogMsg) (*LogResponse, error)
+	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
+	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
+	Recv(context.Context, *Empty) (*SubTopicResponse, error)
+	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
+	Log(context.Context, *LogMsg) (*LogMsgResponse, error)
 	mustEmbedUnimplementedSidecarServer()
 }
 
@@ -94,19 +94,19 @@ type SidecarServer interface {
 type UnimplementedSidecarServer struct {
 }
 
-func (UnimplementedSidecarServer) Register(context.Context, *RegistrationMsg) (*RegistrationResponse, error) {
+func (UnimplementedSidecarServer) Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubResponse, error) {
+func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sub not implemented")
 }
-func (UnimplementedSidecarServer) Recv(context.Context, *Empty) (*RecvResponse, error) {
+func (UnimplementedSidecarServer) Recv(context.Context, *Empty) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
 }
-func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubResponse, error) {
+func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
 }
-func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*LogResponse, error) {
+func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*LogMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
 }
 func (UnimplementedSidecarServer) mustEmbedUnimplementedSidecarServer() {}
@@ -241,5 +241,5 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "messages/sidecar.proto",
+	Metadata: "protos/v1/messages/sidecar.proto",
 }

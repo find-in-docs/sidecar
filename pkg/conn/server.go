@@ -29,7 +29,7 @@ func servId() []byte {
 	return servId
 }
 
-func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*messages.RegistrationResponse, error) {
+func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*messages.RegistrationMsgResponse, error) {
 	fmt.Printf("Received RegistrationMsg: %v\n", in)
 
 	rspHeader := messages.ResponseHeader{
@@ -44,7 +44,7 @@ func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 	}
 	s.Header = &header
 
-	regRsp := &messages.RegistrationResponse{
+	regRsp := &messages.RegistrationMsgResponse{
 		Header:    &header,
 		RspHeader: &rspHeader,
 		Msg:       "OK",
@@ -54,19 +54,19 @@ func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 	return regRsp, nil
 }
 
-func (s *Server) Log(ctx context.Context, in *messages.LogMsg) (*messages.LogResponse, error) {
+func (s *Server) Log(ctx context.Context, in *messages.LogMsg) (*messages.LogMsgResponse, error) {
 
 	return s.Logs.ReceivedLogMsg(in)
 }
 
-func (s *Server) Sub(context.Context, *messages.SubMsg) (*messages.SubResponse, error) {
+func (s *Server) Sub(context.Context, *messages.SubMsg) (*messages.SubMsgResponse, error) {
 	return nil, errors.New("Not implemented")
 }
 
-func (s *Server) Recv(context.Context, *messages.Empty) (*messages.RecvResponse, error) {
+func (s *Server) Recv(context.Context, *messages.Empty) (*messages.SubTopicResponse, error) {
 	return nil, errors.New("Not implemented")
 }
 
-func (s *Server) Pub(context.Context, *messages.PubMsg) (*messages.PubResponse, error) {
+func (s *Server) Pub(context.Context, *messages.PubMsg) (*messages.PubMsgResponse, error) {
 	return nil, errors.New("Not implemented")
 }

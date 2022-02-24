@@ -37,14 +37,44 @@ message RegistrationMsg {
 	optional google.protobuf.Duration retryDelay = 5;
 }
 
+message RegistrationMsgResponse {
+
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
+}
+
+// Publish the given bytes on the given topic.
 message PubMsg {
 	Header header = 1;
-	string msg = 2;
+	string topic = 2;
+	bytes msg = 3;
+}
+
+message PubMsgResponse {
+
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
 }
 
 message SubMsg {
 	Header header = 1;
-	string msg = 2;
+	string topic = 2;
+}
+
+message SubMsgResponse {
+
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
+}
+
+message SubTopicResponse {
+
+	Header header = 1;
+	string topic = 2;
+	bytes msg = 3;
 }
 
 message LogMsg {
@@ -52,41 +82,17 @@ message LogMsg {
 	string msg = 2;
 }
 
-message RegistrationResponse {
+message LogMsgResponse {
 
 	Header header = 1;
 	ResponseHeader rspHeader = 2;
 	string msg = 3;
 }
 
-message SubResponse {
-
-	ResponseHeader header = 1;
-	string msg = 2;
-}
-
-message RecvResponse {
-
-	Header header = 1;
-	bytes data = 2;
-}
-
-message PubResponse {
-
-	ResponseHeader header = 1;
-	string msg = 2;
-}
-
-message LogResponse {
-
-	ResponseHeader header = 1;
-	string msg = 2;
-}
-
 service Sidecar {
-	rpc Register (RegistrationMsg) returns (RegistrationResponse);
-	rpc Sub (SubMsg) returns (SubResponse);
-	rpc Recv (Empty) returns (RecvResponse);
-	rpc Pub (PubMsg) returns (PubResponse);
-	rpc Log (LogMsg) returns (LogResponse);
+	rpc Register (RegistrationMsg) returns (RegistrationMsgResponse);
+	rpc Sub (SubMsg) returns (SubMsgResponse);
+	rpc Recv (Empty) returns (SubTopicResponse);
+	rpc Pub (PubMsg) returns (PubMsgResponse);
+	rpc Log (LogMsg) returns (LogMsgResponse);
 }
