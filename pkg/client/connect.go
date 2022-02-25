@@ -137,3 +137,56 @@ func (sc *SC) Log(msg *string) error {
 
 	return nil
 }
+
+func (sc *SC) Pub(topic string, data []byte) error {
+
+	pubMsg := messages.PubMsg{
+		Header: sc.header,
+		Topic:  topic,
+		Msg:    data,
+	}
+
+	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
+	if err != nil {
+		fmt.Printf("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
+			topic, data, err)
+		os.Exit(-1)
+	}
+
+	if pubRsp.RspHeader.Status != uint32(messages.Status_OK) {
+		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
+			topic, data, err)
+		os.Exit(-1)
+	}
+
+	fmt.Printf("Pub message sent\n\tPubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
+		pubRsp, pubRsp.RspHeader.Status, pubRsp.Msg)
+
+	return nil
+}
+
+func (sc *SC) Sub(topic string) error {
+
+	subMsg := messages.SubMsg{
+		Header: sc.header,
+		Topic:  topic,
+	}
+
+	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
+	if err != nil {
+		fmt.Printf("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
+			topic, err)
+		os.Exit(-1)
+	}
+
+	if subRsp.RspHeader.Status != uint32(messages.Status_OK) {
+		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
+			topic, err)
+		os.Exit(-1)
+	}
+
+	fmt.Printf("Sub message sent\n\tSubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
+		subRsp, subRsp.RspHeader.Status, subRsp.Msg)
+
+	return nil
+}

@@ -14,6 +14,7 @@ type Server struct {
 	messages.UnimplementedSidecarServer
 
 	Logs *Logs
+	Pubs *Pubs
 
 	Header *messages.Header
 }
@@ -67,6 +68,6 @@ func (s *Server) Recv(context.Context, *messages.Empty) (*messages.SubTopicRespo
 	return nil, errors.New("Not implemented")
 }
 
-func (s *Server) Pub(context.Context, *messages.PubMsg) (*messages.PubMsgResponse, error) {
-	return nil, errors.New("Not implemented")
+func (s *Server) Pub(ctx context.Context, in *messages.PubMsg) (*messages.PubMsgResponse, error) {
+	return s.Pubs.Publish(in)
 }
