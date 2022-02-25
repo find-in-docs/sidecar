@@ -70,6 +70,8 @@ message SubMsgResponse {
 	string msg = 3;
 }
 
+// Change this to SubTopicMsg. This is the message coming from NATS server
+// for the specific topic to which this sidecar has subscribed.
 message SubTopicResponse {
 
 	Header header = 1;

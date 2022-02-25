@@ -32,6 +32,7 @@ The server will connect, and run some tests between two sidecar instances`,
 
 		conn.InitLogs(natsConn, srv)
 		conn.InitPubs(natsConn, srv)
+		conn.InitSubs(natsConn, srv)
 
 		numMsgs := 10
 

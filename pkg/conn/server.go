@@ -15,6 +15,7 @@ type Server struct {
 
 	Logs *Logs
 	Pubs *Pubs
+	Subs *Subs
 
 	Header *messages.Header
 }
@@ -60,8 +61,8 @@ func (s *Server) Log(ctx context.Context, in *messages.LogMsg) (*messages.LogMsg
 	return s.Logs.ReceivedLogMsg(in)
 }
 
-func (s *Server) Sub(context.Context, *messages.SubMsg) (*messages.SubMsgResponse, error) {
-	return nil, errors.New("Not implemented")
+func (s *Server) Sub(ctx context.Context, in *messages.SubMsg) (*messages.SubMsgResponse, error) {
+	return s.Subs.Subscribe(in)
 }
 
 func (s *Server) Recv(context.Context, *messages.Empty) (*messages.SubTopicResponse, error) {
