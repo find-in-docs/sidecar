@@ -2,7 +2,6 @@ package conn
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -66,7 +65,7 @@ func (s *Server) Sub(ctx context.Context, in *messages.SubMsg) (*messages.SubMsg
 }
 
 func (s *Server) Recv(context.Context, *messages.Empty) (*messages.SubTopicResponse, error) {
-	return nil, errors.New("Not implemented")
+	return RecvFromNATS(s)
 }
 
 func (s *Server) Pub(ctx context.Context, in *messages.PubMsg) (*messages.PubMsgResponse, error) {

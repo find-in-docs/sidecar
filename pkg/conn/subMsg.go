@@ -16,6 +16,7 @@ type Subs struct {
 	done     chan struct{}
 	msgId    uint32
 	natsConn *Conn
+	header   *messages.Header
 }
 
 func InitSubs(natsConn *Conn, srv *Server) {
@@ -30,8 +31,6 @@ func InitSubs(natsConn *Conn, srv *Server) {
 		msgId:    1,
 		natsConn: natsConn,
 	}
-
-	SendIncomingMsgsToClient(srv.Subs.natsMsgs, done)
 }
 
 func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, error) {
@@ -51,6 +50,7 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 		ServId:      srcHeader.GetServId(),
 		MsgId:       0,
 	}
+	subs.header = &header
 
 	rspHeader := messages.ResponseHeader{
 
@@ -67,37 +67,14 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 	return &subMsgRsp, nil
 }
 
-func SendIncomingMsgsToClient(natsMsgs chan *nats.Msg,
-	done chan struct{}) {
+func RecvFromNATS(srv *Server) (*messages.SubTopicResponse, error) {
 
-	var m *nats.Msg
-	/*
-		var header *messages.Header
-		var err error
-	*/
+	m := <-srv.Subs.natsMsgs
+	fmt.Printf("Got msg from NATS server:\n\t%#v\n", m)
 
-	go func() {
-		for {
-			select {
-			case m = <-natsMsgs:
-				fmt.Printf("Got msg from NATS server:\n\t%v\n", m)
-
-				/*
-					header = l.GetHeader()
-					header.MsgId = logs.msgId
-					logs.msgId += 1
-
-					err = logs.natsConn.Publish("logs", []byte(l.String()))
-					if err != nil {
-						fmt.Printf("Error publishing to NATS server: %v\n", err)
-						os.Exit(-1)
-					}
-					fmt.Printf("Server sent message\n")
-				*/
-
-			case <-done:
-				// drain logs channel here before breaking out of the forever loop
-			}
-		}
-	}()
+	return &messages.SubTopicResponse{
+		Header: srv.Subs.header,
+		Topic:  m.Subject,
+		Msg:    m.Data,
+	}, nil
 }
