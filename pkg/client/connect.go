@@ -62,7 +62,7 @@ func (sc *SC) Register() error {
 	debounceDelayDuration, err := time.ParseDuration("5s")
 	if err != nil {
 		fmt.Printf("Error creating Golang time duration.\nerr: %v\n", err)
-		os.Exit(-1)
+		return err
 	}
 	debounceDelay := durationpb.New(debounceDelayDuration)
 
@@ -71,7 +71,7 @@ func (sc *SC) Register() error {
 	retryDelayDuration, err := time.ParseDuration("2s")
 	if err != nil {
 		fmt.Printf("Error creating Golang time duration.\nerr: %v\n", err)
-		os.Exit(-1)
+		return err
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
 	header := messages.Header{
@@ -123,13 +123,13 @@ func (sc *SC) Log(msg *string) error {
 	logRsp, err := sc.client.Log(context.Background(), &logMsg)
 	if err != nil {
 		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", *msg, err)
-		os.Exit(-1)
+		return err
 	}
 
 	if logRsp.RspHeader.Status != uint32(messages.Status_OK) {
 		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
 			*msg, logRsp.RspHeader.Status)
-		os.Exit(-1)
+		return err
 	}
 
 	fmt.Printf("Log msg sent\n\tLogRsp: %v\n\tStatus: %d\n\tMsg: %s\n",
@@ -150,13 +150,13 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	if err != nil {
 		fmt.Printf("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
-		os.Exit(-1)
+		return err
 	}
 
 	if pubRsp.RspHeader.Status != uint32(messages.Status_OK) {
 		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
-		os.Exit(-1)
+		return err
 	}
 
 	fmt.Printf("Pub message sent\n\tPubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
@@ -176,13 +176,13 @@ func (sc *SC) Sub(topic string) error {
 	if err != nil {
 		fmt.Printf("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
 			topic, err)
-		os.Exit(-1)
+		return err
 	}
 
 	if subRsp.RspHeader.Status != uint32(messages.Status_OK) {
 		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
 			topic, err)
-		os.Exit(-1)
+		return err
 	}
 
 	fmt.Printf("Sub message sent\n\tSubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
@@ -197,11 +197,10 @@ func (sc *SC) Recv() error {
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {
-		fmt.Printf("Could not receive from sidecar - err: %v\n, err)
-		os.Exit(-1)
+		fmt.Printf("Could not receive from sidecar - err: %v\n", err)
+		return err
 	}
 
 	fmt.Printf("Received from sidecar: %#v\n", subTopicRsp)
 	return nil
 }
-
