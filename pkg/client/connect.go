@@ -191,16 +191,16 @@ func (sc *SC) Sub(topic string) error {
 	return nil
 }
 
-func (sc *SC) Recv() error {
+func (sc *SC) Recv() (*messages.SubTopicResponse, error) {
 
 	recvMsg := messages.Empty{}
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {
 		fmt.Printf("Could not receive from sidecar - err: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	fmt.Printf("Received from sidecar: %#v\n", subTopicRsp)
-	return nil
+	return subTopicRsp, nil
 }
