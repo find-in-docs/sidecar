@@ -201,6 +201,6 @@ func (sc *SC) Recv() (*messages.SubTopicResponse, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Received from sidecar: %#v\n", subTopicRsp)
+	fmt.Printf("Client received from sidecar: %#v\n", subTopicRsp)
 	return subTopicRsp, nil
 }
