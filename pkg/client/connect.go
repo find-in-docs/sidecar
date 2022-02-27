@@ -113,7 +113,13 @@ func (sc *SC) Register() error {
 	return nil
 }
 
-func (sc *SC) Log(msg *string) error {
+func (sc *SC) Log(s string, args ...interface{}) {
+
+	str := fmt.Sprintf(s, args...)
+	sc.LogString(&str)
+}
+
+func (sc *SC) LogString(msg *string) error {
 
 	logMsg := messages.LogMsg{
 		Header: sc.header,
