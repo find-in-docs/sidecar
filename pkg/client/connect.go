@@ -121,11 +121,15 @@ func (sc *SC) Log(s string, args ...interface{}) {
 
 func (sc *SC) LogString(msg *string) error {
 
+	// Print message to stdout
+	fmt.Println(msg)
+
 	logMsg := messages.LogMsg{
 		Header: sc.header,
 		Msg:    *msg,
 	}
 
+	// Send message to message queue
 	logRsp, err := sc.client.Log(context.Background(), &logMsg)
 	if err != nil {
 		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", *msg, err)
