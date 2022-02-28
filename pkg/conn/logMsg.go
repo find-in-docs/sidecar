@@ -77,7 +77,7 @@ func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 				header.MsgId = logs.msgId
 				logs.msgId += 1
 
-				err = logs.natsConn.Publish("logs", []byte(l.String()))
+				err = logs.natsConn.Publish("search.v1.logs", []byte(l.String()))
 				if err != nil {
 					fmt.Printf("Error publishing to NATS server: %v\n", err)
 					os.Exit(-1)
