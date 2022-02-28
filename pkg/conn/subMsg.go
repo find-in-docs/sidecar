@@ -45,6 +45,7 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 
 	srcHeader := in.GetHeader()
 	header := messages.Header{
+		MsgType:     messages.MsgType_MSG_TYPE_SUB_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
@@ -72,8 +73,11 @@ func RecvFromNATS(srv *Server) (*messages.SubTopicResponse, error) {
 	m := <-srv.Subs.natsMsgs
 	fmt.Printf("Got msg from NATS server:\n\t%#v\n", m)
 
+	header := srv.Subs.header
+	header.MsgType = messages.MsgType_MSG_TYPE_SUB_TOPIC_RSP
+
 	return &messages.SubTopicResponse{
-		Header: srv.Subs.header,
+		Header: header,
 		Topic:  m.Subject,
 		Msg:    m.Data,
 	}, nil

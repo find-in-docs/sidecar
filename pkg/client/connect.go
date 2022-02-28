@@ -17,7 +17,7 @@ type SC struct {
 	header *messages.Header
 }
 
-func Connect(serverAddr string) (*grpc.ClientConn, *SC, error) {
+func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, error) {
 
 	// var opts []grpc.DialOption
 
@@ -35,14 +35,14 @@ func Connect(serverAddr string) (*grpc.ClientConn, *SC, error) {
 	fmt.Printf("GRPC connection to sidecar created\n")
 
 	header := messages.Header{
-		SrcServType: "",
-		DstServType: "",
+		SrcServType: serviceName,
+		DstServType: "sidecar",
 		ServId:      []byte(""),
 		MsgId:       uint32(0),
 	}
 
 	sc := &SC{client, &header}
-	err = sc.Register()
+	err = sc.Register(serviceName)
 	if err != nil {
 		fmt.Printf("Error registering client:\n\terr: %v\n", err)
 		os.Exit(-1)
@@ -51,7 +51,7 @@ func Connect(serverAddr string) (*grpc.ClientConn, *SC, error) {
 	return conn, sc, nil
 }
 
-func (sc *SC) Register() error {
+func (sc *SC) Register(serviceName string) error {
 
 	var circuitConsecutiveFailures uint32 = 3
 
@@ -74,16 +74,13 @@ func (sc *SC) Register() error {
 		return err
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
-	header := messages.Header{
-		SrcServType: "postgresService",
-		DstServType: "sidecarService",
-		ServId:      []byte(""),
-		MsgId:       0,
-	}
+	header := sc.header
+	header.MsgType = messages.MsgType_MSG_TYPE_REG
 
 	rMsg := &messages.RegistrationMsg{
-		Header: &header,
+		Header: header,
 
+		ServiceName:             serviceName,
 		CircuitFailureThreshold: &circuitConsecutiveFailures,
 		DebounceDelay:           debounceDelay,
 		RetryNum:                &retryNum,
@@ -95,20 +92,9 @@ func (sc *SC) Register() error {
 		fmt.Printf("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
+	fmt.Printf("Registration message sent: \n\tReg: %v\n\tRegRsp: %v\n", rMsg, rRsp)
 
-	fmt.Printf("Registration message sent\n\tRegRsp:\n\t\tHeader: %v\n\t\t",
-		rRsp.GetHeader())
-	fmt.Printf("CircuitFailureThreshold: %d\n\t\tDebounceDelay: %d\n\t\t",
-		rMsg.GetCircuitFailureThreshold(), rMsg.GetDebounceDelay())
-	fmt.Printf("RetryNum: %d\n\t\tRetryDelay: %d\n\t\t",
-		rMsg.GetRetryNum(), rMsg.GetRetryDelay())
-	fmt.Printf("Status: %d\n\t\tMsg: %s\n", rRsp.RspHeader.Status, rRsp.Msg)
-
-	sc.header = &header
-	sc.header.SrcServType = rRsp.Header.DstServType
-	sc.header.DstServType = rRsp.Header.SrcServType
 	sc.header.ServId = rRsp.Header.ServId
-	sc.header.MsgId = 0
 
 	return nil
 }
@@ -124,8 +110,11 @@ func (sc *SC) LogString(msg *string) error {
 	// Print message to stdout
 	fmt.Println(msg)
 
+	header := sc.header
+	header.MsgType = messages.MsgType_MSG_TYPE_LOG
+
 	logMsg := messages.LogMsg{
-		Header: sc.header,
+		Header: header,
 		Msg:    *msg,
 	}
 
@@ -149,6 +138,9 @@ func (sc *SC) LogString(msg *string) error {
 }
 
 func (sc *SC) Pub(topic string, data []byte) error {
+
+	header := sc.header
+	header.MsgType = messages.MsgType_MSG_TYPE_PUB
 
 	pubMsg := messages.PubMsg{
 		Header: sc.header,
@@ -177,8 +169,11 @@ func (sc *SC) Pub(topic string, data []byte) error {
 
 func (sc *SC) Sub(topic string) error {
 
+	header := sc.header
+	header.MsgType = messages.MsgType_MSG_TYPE_SUB
+
 	subMsg := messages.SubMsg{
-		Header: sc.header,
+		Header: header,
 		Topic:  topic,
 	}
 

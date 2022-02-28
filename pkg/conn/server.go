@@ -38,6 +38,7 @@ func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 	}
 
 	header := messages.Header{
+		MsgType:     messages.MsgType_MSG_TYPE_REG_RSP,
 		SrcServType: "sidecarService",
 		DstServType: in.Header.SrcServType,
 		ServId:      servId(),

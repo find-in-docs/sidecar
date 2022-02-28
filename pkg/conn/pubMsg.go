@@ -29,6 +29,7 @@ func (pubs *Pubs) Publish(in *messages.PubMsg) (*messages.PubMsgResponse, error)
 
 	srcHeader := in.GetHeader()
 	header := messages.Header{
+		MsgType:     messages.MsgType_MSG_TYPE_PUB_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),

@@ -5,11 +5,24 @@ import "google/protobuf/duration.proto";
 
 option go_package = "github.com/samirgadkari/sidecar/protos/v1/messages";
 
+enum MsgType {
+	MSG_TYPE_REG = 0;
+	MSG_TYPE_REG_RSP = 1;
+	MSG_TYPE_LOG = 2;
+	MSG_TYPE_LOG_RSP = 3;
+	MSG_TYPE_PUB = 4;
+	MSG_TYPE_PUB_RSP = 5;
+	MSG_TYPE_SUB = 6;
+	MSG_TYPE_SUB_RSP = 7;
+	MSG_TYPE_SUB_TOPIC_RSP = 8;
+}
+
 message Header {
-	string srcServType = 1;
-	string dstServType = 2;
-	bytes servId = 3;
-	uint32 msgId = 4;
+	MsgType msgType = 1;
+	string srcServType = 2;
+	string dstServType = 3;
+	bytes servId = 4;
+	uint32 msgId = 5;
 }
 
 enum Status {
@@ -31,10 +44,11 @@ message RegistrationMsg {
 
 	Header header = 1;
 
-	optional uint32 circuitFailureThreshold = 2;
-	optional google.protobuf.Duration debounceDelay = 3;
-	optional uint32 retryNum = 4;
-	optional google.protobuf.Duration retryDelay = 5;
+	string serviceName = 2;
+	optional uint32 circuitFailureThreshold = 3;
+	optional google.protobuf.Duration debounceDelay = 4;
+	optional uint32 retryNum = 5;
+	optional google.protobuf.Duration retryDelay = 6;
 }
 
 message RegistrationMsgResponse {
