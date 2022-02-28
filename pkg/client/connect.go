@@ -211,13 +211,13 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 
 func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*messages.SubTopicResponse)) error {
 
-	err := sc.Sub("search.v1.*", chanSize)
+	err := sc.Sub(topic, chanSize)
 	if err != nil {
 		return err
 	}
 
 	for {
-		subTopicRsp, err := sc.Recv("search.v1.*")
+		subTopicRsp, err := sc.Recv(topic)
 		if err != nil {
 			sc.Log("Error receiving from sidecar: %#v\n", err)
 			break
