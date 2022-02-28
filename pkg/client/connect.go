@@ -61,7 +61,7 @@ func (sc *SC) Register(serviceName string) error {
 	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
 	debounceDelayDuration, err := time.ParseDuration("5s")
 	if err != nil {
-		fmt.Printf("Error creating Golang time duration.\nerr: %v\n", err)
+		sc.Log("Error creating Golang time duration.\nerr: %v\n", err)
 		return err
 	}
 	debounceDelay := durationpb.New(debounceDelayDuration)
@@ -70,7 +70,7 @@ func (sc *SC) Register(serviceName string) error {
 
 	retryDelayDuration, err := time.ParseDuration("2s")
 	if err != nil {
-		fmt.Printf("Error creating Golang time duration.\nerr: %v\n", err)
+		sc.Log("Error creating Golang time duration.\nerr: %v\n", err)
 		return err
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
@@ -88,11 +88,12 @@ func (sc *SC) Register(serviceName string) error {
 	}
 
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
+	sc.Log("Registration msg sent: %v\n", rMsg)
 	if err != nil {
-		fmt.Printf("Sending Registration caused error:\n\terr: %v\n", err)
+		sc.Log("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
-	fmt.Printf("Registration message sent: \n\tReg: %v\n\tRegRsp: %v\n", rMsg, rRsp)
+	sc.Log("Registration rsp received: %v\n", rRsp)
 
 	sc.header.ServId = rRsp.Header.ServId
 
@@ -131,9 +132,6 @@ func (sc *SC) LogString(msg *string) error {
 		return err
 	}
 
-	fmt.Printf("Log msg sent\n\tLogRsp: %v\n\tStatus: %d\n\tMsg: %s\n",
-		logRsp, logRsp.RspHeader.Status, logRsp.Msg)
-
 	return nil
 }
 
@@ -149,20 +147,19 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	}
 
 	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
+	sc.Log("Pub message sent: %v\n", pubMsg)
 	if err != nil {
-		fmt.Printf("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
+		sc.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
 	}
+	sc.Log("Pub rsp received: %v\n", pubRsp)
 
 	if pubRsp.RspHeader.Status != uint32(messages.Status_OK) {
-		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
+		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
 	}
-
-	fmt.Printf("Pub message sent\n\tPubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
-		pubRsp, pubRsp.RspHeader.Status, pubRsp.Msg)
 
 	return nil
 }
@@ -178,20 +175,19 @@ func (sc *SC) Sub(topic string) error {
 	}
 
 	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
+	sc.Log("Sub message sent: %v\n", subMsg)
 	if err != nil {
-		fmt.Printf("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
+		sc.Log("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
 			topic, err)
 		return err
 	}
+	sc.Log("Sub rsp received: %v\n", subRsp)
 
 	if subRsp.RspHeader.Status != uint32(messages.Status_OK) {
-		fmt.Printf("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
+		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
 			topic, err)
 		return err
 	}
-
-	fmt.Printf("Sub message sent\n\tSubMsgResponse: %v\n\tStatus: %d\n\tMsg: %s\n",
-		subRsp, subRsp.RspHeader.Status, subRsp.Msg)
 
 	return nil
 }
@@ -202,10 +198,10 @@ func (sc *SC) Recv() (*messages.SubTopicResponse, error) {
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {
-		fmt.Printf("Could not receive from sidecar - err: %v\n", err)
+		sc.Log("Could not receive from sidecar - err: %v\n", err)
 		return nil, err
 	}
 
-	fmt.Printf("Client received from sidecar: %#v\n", subTopicRsp)
+	sc.Log("Client received from sidecar: %v\n", subTopicRsp)
 	return subTopicRsp, nil
 }
