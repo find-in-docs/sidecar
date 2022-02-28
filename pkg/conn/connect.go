@@ -39,7 +39,6 @@ func (c *Conn) Subscribe(t string, f func(*nats.Msg)) (*nats.Subscription, error
 		os.Exit(-1)
 	}
 
-	fmt.Printf("Subscription: %v\n", s)
 	return s, nil
 }
 

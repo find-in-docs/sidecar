@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SidecarClient interface {
 	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
-	Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SubTopicResponse, error)
+	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error)
 }
@@ -51,7 +51,7 @@ func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Recv(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SubTopicResponse, error) {
+func (c *sidecarClient) Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error) {
 	out := new(SubTopicResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Recv", in, out, opts...)
 	if err != nil {
@@ -84,7 +84,7 @@ func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOp
 type SidecarServer interface {
 	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
-	Recv(context.Context, *Empty) (*SubTopicResponse, error)
+	Recv(context.Context, *Receive) (*SubTopicResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
 	Log(context.Context, *LogMsg) (*LogMsgResponse, error)
 	mustEmbedUnimplementedSidecarServer()
@@ -100,7 +100,7 @@ func (UnimplementedSidecarServer) Register(context.Context, *RegistrationMsg) (*
 func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sub not implemented")
 }
-func (UnimplementedSidecarServer) Recv(context.Context, *Empty) (*SubTopicResponse, error) {
+func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
 }
 func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
@@ -159,7 +159,7 @@ func _Sidecar_Sub_Handler(srv interface{}, ctx context.Context, dec func(interfa
 }
 
 func _Sidecar_Recv_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(Receive)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func _Sidecar_Recv_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/messages.Sidecar/Recv",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SidecarServer).Recv(ctx, req.(*Empty))
+		return srv.(SidecarServer).Recv(ctx, req.(*Receive))
 	}
 	return interceptor(ctx, in, info, handler)
 }

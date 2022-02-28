@@ -12,7 +12,7 @@ const (
 )
 
 type Subs struct {
-	natsMsgs chan *nats.Msg
+	natsMsgs map[string]chan *nats.Msg
 	done     chan struct{}
 	msgId    uint32
 	natsConn *Conn
@@ -21,7 +21,7 @@ type Subs struct {
 
 func InitSubs(natsConn *Conn, srv *Server) {
 
-	natsMsgs := make(chan *nats.Msg, msgChSize)
+	natsMsgs := make(map[string]chan *nats.Msg)
 	done := make(chan struct{})
 
 	srv.Subs = &Subs{
@@ -37,10 +37,14 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 
 	fmt.Printf("Received SubMsg: %v\n", in)
 	topic := in.GetTopic()
+	chanSize := in.GetChanSize()
+
+	topicMsgs := make(chan *nats.Msg, chanSize)
+	subs.natsMsgs[topic] = topicMsgs
 
 	subs.natsConn.Subscribe(topic, func(m *nats.Msg) {
 		fmt.Printf("Received msg from NATS: %v\n", m)
-		subs.natsMsgs <- m
+		subs.natsMsgs[topic] <- m
 	})
 
 	srcHeader := in.GetHeader()
@@ -68,9 +72,9 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 	return &subMsgRsp, nil
 }
 
-func RecvFromNATS(srv *Server) (*messages.SubTopicResponse, error) {
+func RecvFromNATS(srv *Server, in *messages.Receive) (*messages.SubTopicResponse, error) {
 
-	m := <-srv.Subs.natsMsgs
+	m := <-srv.Subs.natsMsgs[in.Topic]
 	fmt.Printf("Got msg from NATS server:\n\t%#v\n", m)
 
 	header := srv.Subs.header

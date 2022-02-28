@@ -164,14 +164,15 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	return nil
 }
 
-func (sc *SC) Sub(topic string) error {
+func (sc *SC) Sub(topic string, chanSize uint32) error {
 
 	header := sc.header
 	header.MsgType = messages.MsgType_MSG_TYPE_SUB
 
 	subMsg := messages.SubMsg{
-		Header: header,
-		Topic:  topic,
+		Header:   header,
+		Topic:    topic,
+		ChanSize: chanSize,
 	}
 
 	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
@@ -192,9 +193,11 @@ func (sc *SC) Sub(topic string) error {
 	return nil
 }
 
-func (sc *SC) Recv() (*messages.SubTopicResponse, error) {
+func (sc *SC) Recv(topic string) (*messages.SubTopicResponse, error) {
 
-	recvMsg := messages.Empty{}
+	recvMsg := messages.Receive{
+		Topic: topic,
+	}
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {

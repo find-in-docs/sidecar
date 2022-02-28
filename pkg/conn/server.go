@@ -51,7 +51,7 @@ func (s *Server) Register(ctx context.Context, in *messages.RegistrationMsg) (*m
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
-	fmt.Printf("Sending regRsp: %v\n", *regRsp)
+	fmt.Printf("Sending regRsp: %v\n", regRsp)
 
 	return regRsp, nil
 }
@@ -65,8 +65,8 @@ func (s *Server) Sub(ctx context.Context, in *messages.SubMsg) (*messages.SubMsg
 	return s.Subs.Subscribe(in)
 }
 
-func (s *Server) Recv(context.Context, *messages.Empty) (*messages.SubTopicResponse, error) {
-	return RecvFromNATS(s)
+func (s *Server) Recv(ctx context.Context, m *messages.Receive) (*messages.SubTopicResponse, error) {
+	return RecvFromNATS(s, m)
 }
 
 func (s *Server) Pub(ctx context.Context, in *messages.PubMsg) (*messages.PubMsgResponse, error) {
