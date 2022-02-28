@@ -88,12 +88,12 @@ func (sc *SC) Register(serviceName string) error {
 	}
 
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
-	sc.Log("Registration msg sent: %v\n", rMsg)
+	fmt.Printf("Registration msg sent: %v\n", rMsg)
 	if err != nil {
 		sc.Log("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
-	sc.Log("Registration rsp received: %v\n", rRsp)
+	fmt.Printf("Registration rsp received: %v\n", rRsp)
 
 	sc.header.ServId = rRsp.Header.ServId
 
@@ -109,7 +109,7 @@ func (sc *SC) Log(s string, args ...interface{}) {
 func (sc *SC) LogString(msg *string) error {
 
 	// Print message to stdout
-	fmt.Println(msg)
+	fmt.Println(*msg)
 
 	header := sc.header
 	header.MsgType = messages.MsgType_MSG_TYPE_LOG
@@ -147,13 +147,13 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	}
 
 	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
-	sc.Log("Pub message sent: %v\n", pubMsg)
+	fmt.Printf("Pub message sent: %v\n", pubMsg)
 	if err != nil {
 		sc.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
 	}
-	sc.Log("Pub rsp received: %v\n", pubRsp)
+	fmt.Printf("Pub rsp received: %v\n", pubRsp)
 
 	if pubRsp.RspHeader.Status != uint32(messages.Status_OK) {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
@@ -175,13 +175,13 @@ func (sc *SC) Sub(topic string) error {
 	}
 
 	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
-	sc.Log("Sub message sent: %v\n", subMsg)
+	fmt.Printf("Sub message sent: %v\n", &subMsg)
 	if err != nil {
 		sc.Log("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
 			topic, err)
 		return err
 	}
-	sc.Log("Sub rsp received: %v\n", subRsp)
+	fmt.Printf("Sub rsp received: %v\n", subRsp)
 
 	if subRsp.RspHeader.Status != uint32(messages.Status_OK) {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
@@ -202,6 +202,6 @@ func (sc *SC) Recv() (*messages.SubTopicResponse, error) {
 		return nil, err
 	}
 
-	sc.Log("Client received from sidecar: %v\n", subTopicRsp)
+	fmt.Printf("Client received from sidecar: %v\n", subTopicRsp)
 	return subTopicRsp, nil
 }
