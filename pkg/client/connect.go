@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/samirgadkari/sidecar/pkg/config"
 	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -15,6 +17,20 @@ import (
 type SC struct {
 	client messages.SidecarClient
 	header *messages.Header
+}
+
+func InitSidecar(serviceName string) *SC {
+
+	config.LoadConfig()
+
+	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
+	_, sidecar, err := Connect(serviceName, sidecarServiceAddr)
+	if err != nil {
+		fmt.Printf("Error connecting to client: %v\n", err)
+		os.Exit(-1)
+	}
+
+	return sidecar
 }
 
 func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, error) {
@@ -188,6 +204,26 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
 			topic, err)
 		return err
+	}
+
+	return nil
+}
+
+func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*messages.SubTopicResponse)) error {
+
+	err := sc.Sub("search.v1.*", chanSize)
+	if err != nil {
+		return err
+	}
+
+	for {
+		subTopicRsp, err := sc.Recv("search.v1.*")
+		if err != nil {
+			sc.Log("Error receiving from sidecar: %#v\n", err)
+			break
+		}
+
+		f(subTopicRsp)
 	}
 
 	return nil
