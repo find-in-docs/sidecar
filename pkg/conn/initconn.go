@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/samirgadkari/sidecar/pkg/config"
-	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
@@ -35,7 +35,7 @@ func InitGRPCconn(srv *Server) {
 			os.Exit(-1)
 		}
 
-		messages.RegisterSidecarServer(s, srv)
+		pb.RegisterSidecarServer(s, srv)
 
 		fmt.Printf("Server listening at %v\n", lis.Addr())
 		if err = s.Serve(lis); err != nil {

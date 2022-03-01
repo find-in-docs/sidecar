@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 )
 
 type Logs struct {
-	logs     chan *messages.LogMsg
+	logs     chan *pb.LogMsg
 	done     chan struct{}
 	msgId    uint32
 	natsConn *Conn
@@ -20,7 +20,7 @@ type Logs struct {
 
 func InitLogs(natsConn *Conn, srv *Server) {
 
-	logs := make(chan *messages.LogMsg, logChSize)
+	logs := make(chan *pb.LogMsg, logChSize)
 	done := make(chan struct{})
 
 	srv.Logs = &Logs{
@@ -33,26 +33,26 @@ func InitLogs(natsConn *Conn, srv *Server) {
 	SendLogsToMsgQueue(srv.Logs, done)
 }
 
-func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogMsgResponse, error) {
+func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
 	l.logs <- in
 
 	fmt.Printf("Received LogMsg: %v\n", in)
 
 	srcHeader := in.GetHeader()
-	header := messages.Header{
-		MsgType:     messages.MsgType_MSG_TYPE_LOG_RSP,
+	header := pb.Header{
+		MsgType:     pb.MsgType_MSG_TYPE_LOG_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
 		MsgId:       0,
 	}
 
-	rspHeader := messages.ResponseHeader{
-		Status: uint32(messages.Status_OK),
+	rspHeader := pb.ResponseHeader{
+		Status: uint32(pb.Status_OK),
 	}
 
-	logRsp := &messages.LogMsgResponse{
+	logRsp := &pb.LogMsgResponse{
 		Header:    &header,
 		RspHeader: &rspHeader,
 		Msg:       "OK",
@@ -63,8 +63,8 @@ func (l *Logs) ReceivedLogMsg(in *messages.LogMsg) (*messages.LogMsgResponse, er
 
 func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 
-	var l *messages.LogMsg
-	var header *messages.Header
+	var l *pb.LogMsg
+	var header *pb.Header
 	var err error
 
 	go func() {

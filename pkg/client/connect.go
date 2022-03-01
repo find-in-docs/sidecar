@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/samirgadkari/sidecar/pkg/config"
-	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,8 +15,8 @@ import (
 )
 
 type SC struct {
-	client messages.SidecarClient
-	header *messages.Header
+	client pb.SidecarClient
+	header *pb.Header
 }
 
 func InitSidecar(serviceName string) *SC {
@@ -47,10 +47,10 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 
 	fmt.Printf("conn: %v\n", conn)
 
-	client := messages.NewSidecarClient(conn)
+	client := pb.NewSidecarClient(conn)
 	fmt.Printf("GRPC connection to sidecar created\n")
 
-	header := messages.Header{
+	header := pb.Header{
 		SrcServType: serviceName,
 		DstServType: "sidecar",
 		ServId:      []byte(""),
@@ -91,9 +91,9 @@ func (sc *SC) Register(serviceName string) error {
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
 	header := sc.header
-	header.MsgType = messages.MsgType_MSG_TYPE_REG
+	header.MsgType = pb.MsgType_MSG_TYPE_REG
 
-	rMsg := &messages.RegistrationMsg{
+	rMsg := &pb.RegistrationMsg{
 		Header: header,
 
 		ServiceName:             serviceName,
@@ -128,9 +128,9 @@ func (sc *SC) LogString(msg *string) error {
 	fmt.Println(*msg)
 
 	header := sc.header
-	header.MsgType = messages.MsgType_MSG_TYPE_LOG
+	header.MsgType = pb.MsgType_MSG_TYPE_LOG
 
-	logMsg := messages.LogMsg{
+	logMsg := pb.LogMsg{
 		Header: header,
 		Msg:    *msg,
 	}
@@ -142,7 +142,7 @@ func (sc *SC) LogString(msg *string) error {
 		return err
 	}
 
-	if logRsp.RspHeader.Status != uint32(messages.Status_OK) {
+	if logRsp.RspHeader.Status != uint32(pb.Status_OK) {
 		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
 			*msg, logRsp.RspHeader.Status)
 		return err
@@ -154,9 +154,9 @@ func (sc *SC) LogString(msg *string) error {
 func (sc *SC) Pub(topic string, data []byte) error {
 
 	header := sc.header
-	header.MsgType = messages.MsgType_MSG_TYPE_PUB
+	header.MsgType = pb.MsgType_MSG_TYPE_PUB
 
-	pubMsg := messages.PubMsg{
+	pubMsg := pb.PubMsg{
 		Header: sc.header,
 		Topic:  topic,
 		Msg:    data,
@@ -171,7 +171,7 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	}
 	fmt.Printf("Pub rsp received: %v\n", pubRsp)
 
-	if pubRsp.RspHeader.Status != uint32(messages.Status_OK) {
+	if pubRsp.RspHeader.Status != uint32(pb.Status_OK) {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
@@ -183,9 +183,9 @@ func (sc *SC) Pub(topic string, data []byte) error {
 func (sc *SC) Sub(topic string, chanSize uint32) error {
 
 	header := sc.header
-	header.MsgType = messages.MsgType_MSG_TYPE_SUB
+	header.MsgType = pb.MsgType_MSG_TYPE_SUB
 
-	subMsg := messages.SubMsg{
+	subMsg := pb.SubMsg{
 		Header:   header,
 		Topic:    topic,
 		ChanSize: chanSize,
@@ -200,7 +200,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 	}
 	fmt.Printf("Sub rsp received: %v\n", subRsp)
 
-	if subRsp.RspHeader.Status != uint32(messages.Status_OK) {
+	if subRsp.RspHeader.Status != uint32(pb.Status_OK) {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
 			topic, err)
 		return err
@@ -212,9 +212,9 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 func (sc *SC) Unsub(topic string) error {
 
 	header := sc.header
-	header.MsgType = messages.MsgType_MSG_TYPE_UNSUB
+	header.MsgType = pb.MsgType_MSG_TYPE_UNSUB
 
-	unsubMsg := messages.UnsubMsg{
+	unsubMsg := pb.UnsubMsg{
 		Header: header,
 		Topic:  topic,
 	}
@@ -226,7 +226,7 @@ func (sc *SC) Unsub(topic string) error {
 		return err
 	}
 
-	if unsubRsp.RspHeader.Status != uint32(messages.Status_OK) {
+	if unsubRsp.RspHeader.Status != uint32(pb.Status_OK) {
 		sc.Log("Error received while unsubscribing to topic:\n\ttopic: %s\n", topic, err)
 		return err
 	}
@@ -234,7 +234,7 @@ func (sc *SC) Unsub(topic string) error {
 	return nil
 }
 
-func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*messages.SubTopicResponse)) error {
+func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicResponse)) error {
 
 	err := sc.Sub(topic, chanSize)
 	if err != nil {
@@ -254,9 +254,9 @@ func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*messages.Sub
 	return nil
 }
 
-func (sc *SC) Recv(topic string) (*messages.SubTopicResponse, error) {
+func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 
-	recvMsg := messages.Receive{
+	recvMsg := pb.Receive{
 		Topic: topic,
 	}
 

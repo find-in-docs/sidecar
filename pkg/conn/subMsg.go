@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
 const (
@@ -16,7 +16,7 @@ type Subs struct {
 	subscriptions map[string]*nats.Subscription
 	msgId         uint32
 	natsConn      *Conn
-	header        *messages.Header
+	header        *pb.Header
 }
 
 func InitSubs(natsConn *Conn, srv *Server) {
@@ -33,7 +33,7 @@ func InitSubs(natsConn *Conn, srv *Server) {
 	}
 }
 
-func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, error) {
+func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
 	fmt.Printf("Received SubMsg: %v\n", in)
 	topic := in.GetTopic()
@@ -52,8 +52,8 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 	subs.subscriptions[topic] = subscription
 
 	srcHeader := in.GetHeader()
-	header := messages.Header{
-		MsgType:     messages.MsgType_MSG_TYPE_SUB_RSP,
+	header := pb.Header{
+		MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
@@ -61,12 +61,12 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 	}
 	subs.header = &header
 
-	rspHeader := messages.ResponseHeader{
+	rspHeader := pb.ResponseHeader{
 
-		Status: uint32(messages.Status_OK),
+		Status: uint32(pb.Status_OK),
 	}
 
-	subMsgRsp := messages.SubMsgResponse{
+	subMsgRsp := pb.SubMsgResponse{
 
 		Header:    &header,
 		RspHeader: &rspHeader,
@@ -76,7 +76,7 @@ func (subs *Subs) Subscribe(in *messages.SubMsg) (*messages.SubMsgResponse, erro
 	return &subMsgRsp, nil
 }
 
-func RecvFromNATS(srv *Server, in *messages.Receive) (*messages.SubTopicResponse, error) {
+func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
 	natsMsgs, ok := srv.Subs.natsMsgs[in.Topic]
 	fmt.Printf("ok: %v\nnatsMsgs: %v\n", ok, natsMsgs)
@@ -92,16 +92,16 @@ func RecvFromNATS(srv *Server, in *messages.Receive) (*messages.SubTopicResponse
 	fmt.Printf("Got msg from NATS server:\n\t%#v\n\ttopic:%s", m, in.Topic)
 
 	header := srv.Subs.header
-	header.MsgType = messages.MsgType_MSG_TYPE_SUB_TOPIC_RSP
+	header.MsgType = pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP
 
-	return &messages.SubTopicResponse{
+	return &pb.SubTopicResponse{
 		Header: header,
 		Topic:  m.Subject,
 		Msg:    m.Data,
 	}, nil
 }
 
-func (subs *Subs) Unsubscribe(in *messages.UnsubMsg) (*messages.UnsubMsgResponse, error) {
+func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	fmt.Printf("Received UnsubMsg: %v\n", in)
 	topic := in.GetTopic()
@@ -121,8 +121,8 @@ func (subs *Subs) Unsubscribe(in *messages.UnsubMsg) (*messages.UnsubMsgResponse
 	fmt.Printf("Successfully unsubscribed from topic: %s\n", topic)
 
 	srcHeader := in.GetHeader()
-	header := messages.Header{
-		MsgType:     messages.MsgType_MSG_TYPE_UNSUB_RSP,
+	header := pb.Header{
+		MsgType:     pb.MsgType_MSG_TYPE_UNSUB_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
@@ -130,12 +130,12 @@ func (subs *Subs) Unsubscribe(in *messages.UnsubMsg) (*messages.UnsubMsgResponse
 	}
 	subs.header = &header
 
-	rspHeader := messages.ResponseHeader{
+	rspHeader := pb.ResponseHeader{
 
-		Status: uint32(messages.Status_OK),
+		Status: uint32(pb.Status_OK),
 	}
 
-	unsubMsgRsp := messages.UnsubMsgResponse{
+	unsubMsgRsp := pb.UnsubMsgResponse{
 
 		Header:    &header,
 		RspHeader: &rspHeader,

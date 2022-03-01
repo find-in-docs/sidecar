@@ -3,7 +3,7 @@ package conn
 import (
 	"fmt"
 
-	"github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
 type Pubs struct {
@@ -19,7 +19,7 @@ func InitPubs(natsConn *Conn, srv *Server) {
 	}
 }
 
-func (pubs *Pubs) Publish(in *messages.PubMsg) (*messages.PubMsgResponse, error) {
+func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
 	fmt.Printf("Received PubMsg: %v\n", in)
 	topic := in.GetTopic()
@@ -28,20 +28,20 @@ func (pubs *Pubs) Publish(in *messages.PubMsg) (*messages.PubMsgResponse, error)
 	pubs.natsConn.Publish(topic, data)
 
 	srcHeader := in.GetHeader()
-	header := messages.Header{
-		MsgType:     messages.MsgType_MSG_TYPE_PUB_RSP,
+	header := pb.Header{
+		MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
 		MsgId:       0,
 	}
 
-	rspHeader := messages.ResponseHeader{
+	rspHeader := pb.ResponseHeader{
 
-		Status: uint32(messages.Status_OK),
+		Status: uint32(pb.Status_OK),
 	}
 
-	pubMsgRsp := messages.PubMsgResponse{
+	pubMsgRsp := pb.PubMsgResponse{
 
 		Header:    &header,
 		RspHeader: &rspHeader,
