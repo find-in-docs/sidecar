@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/nats-io/nats.go"
+	"github.com/samirgadkari/sidecar/pkg/config"
 	"github.com/samirgadkari/sidecar/pkg/conn"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,8 @@ var serverCmd = &cobra.Command{
 	Long: `Start a server to talk to a NATS client and listen to GRPC requests. 
 The server will connect, and run some tests between two sidecar instances`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		config.Load()
 
 		natsConn, srv, err := conn.Initconns()
 		if err != nil {

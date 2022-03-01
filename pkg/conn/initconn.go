@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/samirgadkari/sidecar/pkg/config"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -48,8 +47,6 @@ func Initconns() (*Conn, *Server, error) {
 
 	// Initialize empty server. Load it with values you need later.
 	srv := &Server{}
-
-	config.LoadConfig()
 
 	InitGRPCconn(srv)
 

@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/samirgadkari/sidecar/pkg/config"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -20,8 +19,6 @@ type SC struct {
 }
 
 func InitSidecar(serviceName string) *SC {
-
-	config.LoadConfig()
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
 	_, sidecar, err := Connect(serviceName, sidecarServiceAddr)

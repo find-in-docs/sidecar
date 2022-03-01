@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func LoadConfig() {
+func Load() {
 	configFilename := "config.yaml"
 
 	viper.SetConfigName("config")
