@@ -65,6 +65,10 @@ func (s *Server) Sub(ctx context.Context, in *messages.SubMsg) (*messages.SubMsg
 	return s.Subs.Subscribe(in)
 }
 
+func (s *Server) Unsub(ctx context.Context, in *messages.UnsubMsg) (*messages.UnsubMsgResponse, error) {
+	return s.Subs.Unsubscribe(in)
+}
+
 func (s *Server) Recv(ctx context.Context, m *messages.Receive) (*messages.SubTopicResponse, error) {
 	return RecvFromNATS(s, m)
 }

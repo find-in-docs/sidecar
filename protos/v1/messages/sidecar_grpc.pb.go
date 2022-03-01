@@ -21,6 +21,7 @@ type SidecarClient interface {
 	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
+	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error)
 }
@@ -60,6 +61,15 @@ func (c *sidecarClient) Recv(ctx context.Context, in *Receive, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *sidecarClient) Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error) {
+	out := new(UnsubMsgResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/Unsub", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error) {
 	out := new(PubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Pub", in, out, opts...)
@@ -85,6 +95,7 @@ type SidecarServer interface {
 	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
+	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
 	Log(context.Context, *LogMsg) (*LogMsgResponse, error)
 	mustEmbedUnimplementedSidecarServer()
@@ -102,6 +113,9 @@ func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse
 }
 func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
+}
+func (UnimplementedSidecarServer) Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unsub not implemented")
 }
 func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
@@ -176,6 +190,24 @@ func _Sidecar_Recv_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sidecar_Unsub_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).Unsub(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/Unsub",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).Unsub(ctx, req.(*UnsubMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Sidecar_Pub_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PubMsg)
 	if err := dec(in); err != nil {
@@ -230,6 +262,10 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Recv",
 			Handler:    _Sidecar_Recv_Handler,
+		},
+		{
+			MethodName: "Unsub",
+			Handler:    _Sidecar_Unsub_Handler,
 		},
 		{
 			MethodName: "Pub",

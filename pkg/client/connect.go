@@ -209,6 +209,31 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 	return nil
 }
 
+func (sc *SC) Unsub(topic string) error {
+
+	header := sc.header
+	header.MsgType = messages.MsgType_MSG_TYPE_UNSUB
+
+	unsubMsg := messages.UnsubMsg{
+		Header: header,
+		Topic:  topic,
+	}
+
+	unsubRsp, err := sc.client.Unsub(context.Background(), &unsubMsg)
+	fmt.Printf("Unsub message sent: %v\n", &unsubMsg)
+	if err != nil {
+		sc.Log("Could not unsubscribe from topic:\n\ttopic: %s\n", topic, err)
+		return err
+	}
+
+	if unsubRsp.RspHeader.Status != uint32(messages.Status_OK) {
+		sc.Log("Error received while unsubscribing to topic:\n\ttopic: %s\n", topic, err)
+		return err
+	}
+
+	return nil
+}
+
 func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*messages.SubTopicResponse)) error {
 
 	err := sc.Sub(topic, chanSize)
