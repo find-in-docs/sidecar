@@ -81,12 +81,12 @@ func RecvFromNATS(srv *Server, in *messages.Receive) (*messages.SubTopicResponse
 	natsMsgs, ok := srv.Subs.natsMsgs[in.Topic]
 	fmt.Printf("ok: %v\nnatsMsgs: %v\n", ok, natsMsgs)
 	if !ok {
-		return nil, fmt.Errorf("Error - already unsubscribed from topic: %s\n", in.Topic)
+		return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
 	}
 
 	m := <-natsMsgs
 	if m == nil {
-		return nil, fmt.Errorf("Error - already unsubscribed from topic: %s\n", in.Topic)
+		return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
 	}
 
 	fmt.Printf("Got msg from NATS server:\n\t%#v\n\ttopic:%s", m, in.Topic)
