@@ -4,33 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
+	scconn "github.com/samirgadkari/sidecar/pkg/conn"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
-
-type MsgID struct {
-	mu    sync.Mutex
-	Value uint64
-}
-
-func NextMsgIdCall() func() uint64 {
-
-	var MsgId MsgID
-
-	return func() uint64 {
-		MsgId.mu.Lock()
-		defer MsgId.mu.Unlock()
-
-		MsgId.Value += 1
-		return MsgId.Value
-	}
-}
 
 type SC struct {
 	client pb.SidecarClient
@@ -70,7 +52,7 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 		SrcServType: serviceName,
 		DstServType: "sidecar",
 		ServId:      []byte(""),
-		MsgId:       NextMsgIdCall()(),
+		MsgId:       scconn.NextMsgId(),
 	}
 
 	sc := &SC{client, &header}
@@ -108,7 +90,7 @@ func (sc *SC) Register(serviceName string) error {
 	retryDelay := durationpb.New(retryDelayDuration)
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_REG
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	rMsg := &pb.RegistrationMsg{
 		Header: header,
@@ -146,7 +128,7 @@ func (sc *SC) LogString(msg *string) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_LOG
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	logMsg := pb.LogMsg{
 		Header: header,
@@ -173,7 +155,7 @@ func (sc *SC) Pub(topic string, data []byte) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_PUB
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	pubMsg := pb.PubMsg{
 		Header: sc.header,
@@ -203,7 +185,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_SUB
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	subMsg := pb.SubMsg{
 		Header:   header,
@@ -233,7 +215,7 @@ func (sc *SC) Unsub(topic string) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_UNSUB
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	unsubMsg := pb.UnsubMsg{
 		Header: header,
@@ -278,7 +260,7 @@ func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicR
 func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 
 	header := sc.header
-	header.MsgId = NextMsgIdCall()()
+	header.MsgId = scconn.NextMsgId()
 
 	recvMsg := pb.Receive{
 		Header: header,

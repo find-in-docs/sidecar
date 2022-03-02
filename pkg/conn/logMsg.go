@@ -43,7 +43,7 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
-		MsgId:       NextMsgIdCall()(),
+		MsgId:       NextMsgId(),
 	}
 
 	rspHeader := pb.ResponseHeader{
@@ -72,7 +72,7 @@ func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 				fmt.Printf("Got log msg:\n\t%v\n", l)
 
 				header = l.GetHeader()
-				header.MsgId = NextMsgIdCall()()
+				header.MsgId = NextMsgId()
 
 				err = logs.natsConn.Publish("search.v1.logs", []byte(l.String()))
 				if err != nil {

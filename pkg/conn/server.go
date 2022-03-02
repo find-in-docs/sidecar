@@ -4,31 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/google/uuid"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
-
-// This value is used in other places than just within the server context.
-// This means we have to keep it as a global.
-type MsgID struct {
-	mu    sync.Mutex
-	Value uint64
-}
-
-func NextMsgIdCall() func() uint64 {
-
-	var MsgId MsgID
-
-	return func() uint64 {
-		MsgId.mu.Lock()
-		defer MsgId.mu.Unlock()
-
-		MsgId.Value += 1
-		return MsgId.Value
-	}
-}
 
 type Server struct {
 	pb.UnimplementedSidecarServer
@@ -65,7 +44,7 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		ServId:      servId(),
 	}
 	if header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	s.Header = &header
 
@@ -82,7 +61,7 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
 	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	return s.Logs.ReceivedLogMsg(in)
 }
@@ -90,7 +69,7 @@ func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*pb.LogMsgResponse, er
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
 	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	return s.Subs.Subscribe(in)
 }
@@ -98,7 +77,7 @@ func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, er
 func (s *Server) Unsub(ctx context.Context, in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	return s.Subs.Unsubscribe(in)
 }
@@ -106,7 +85,7 @@ func (s *Server) Unsub(ctx context.Context, in *pb.UnsubMsg) (*pb.UnsubMsgRespon
 func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
 	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	return RecvFromNATS(s, in)
 }
@@ -114,7 +93,7 @@ func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse
 func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
 	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgIdCall()()
+		in.Header.MsgId = NextMsgId()
 	}
 	return s.Pubs.Publish(in)
 }
