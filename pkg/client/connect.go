@@ -108,6 +108,7 @@ func (sc *SC) Register(serviceName string) error {
 	retryDelay := durationpb.New(retryDelayDuration)
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_REG
+	header.MsgId = NextMsgIdCall()()
 
 	rMsg := &pb.RegistrationMsg{
 		Header: header,
@@ -145,6 +146,7 @@ func (sc *SC) LogString(msg *string) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_LOG
+	header.MsgId = NextMsgIdCall()()
 
 	logMsg := pb.LogMsg{
 		Header: header,
@@ -171,6 +173,7 @@ func (sc *SC) Pub(topic string, data []byte) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_PUB
+	header.MsgId = NextMsgIdCall()()
 
 	pubMsg := pb.PubMsg{
 		Header: sc.header,
@@ -200,6 +203,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_SUB
+	header.MsgId = NextMsgIdCall()()
 
 	subMsg := pb.SubMsg{
 		Header:   header,
@@ -229,6 +233,7 @@ func (sc *SC) Unsub(topic string) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_UNSUB
+	header.MsgId = NextMsgIdCall()()
 
 	unsubMsg := pb.UnsubMsg{
 		Header: header,
@@ -272,8 +277,12 @@ func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicR
 
 func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 
+	header := sc.header
+	header.MsgId = NextMsgIdCall()()
+
 	recvMsg := pb.Receive{
-		Topic: topic,
+		Header: header,
+		Topic:  topic,
 	}
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)

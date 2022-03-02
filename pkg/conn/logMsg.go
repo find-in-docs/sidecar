@@ -14,7 +14,6 @@ const (
 type Logs struct {
 	logs     chan *pb.LogMsg
 	done     chan struct{}
-	msgId    uint32
 	natsConn *Conn
 }
 
@@ -26,7 +25,6 @@ func InitLogs(natsConn *Conn, srv *Server) {
 	srv.Logs = &Logs{
 		logs:     logs,
 		done:     done,
-		msgId:    1,
 		natsConn: natsConn,
 	}
 
@@ -74,8 +72,7 @@ func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 				fmt.Printf("Got log msg:\n\t%v\n", l)
 
 				header = l.GetHeader()
-				header.MsgId = logs.msgId
-				logs.msgId += 1
+				header.MsgId = NextMsgIdCall()()
 
 				err = logs.natsConn.Publish("search.v1.logs", []byte(l.String()))
 				if err != nil {

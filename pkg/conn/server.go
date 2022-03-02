@@ -31,7 +31,7 @@ func NextMsgIdCall() func() uint64 {
 }
 
 type Server struct {
-	// pb.UnimplementedSidecarServer
+	pb.UnimplementedSidecarServer
 
 	Logs *Logs
 	Pubs *Pubs
@@ -63,7 +63,9 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		SrcServType: "sidecarService",
 		DstServType: in.Header.SrcServType,
 		ServId:      servId(),
-		MsgId:       NextMsgIdCall()(),
+	}
+	if header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
 	}
 	s.Header = &header
 
@@ -79,30 +81,40 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 
 func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
-	in.Header.MsgId = NextMsgIdCall()()
+	if in.Header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
+	}
 	return s.Logs.ReceivedLogMsg(in)
 }
 
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
-	in.Header.MsgId = NextMsgIdCall()()
+	if in.Header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
+	}
 	return s.Subs.Subscribe(in)
 }
 
 func (s *Server) Unsub(ctx context.Context, in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
-	in.Header.MsgId = NextMsgIdCall()()
+	if in.Header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
+	}
 	return s.Subs.Unsubscribe(in)
 }
 
-func (s *Server) Recv(ctx context.Context, m *pb.Receive) (*pb.SubTopicResponse, error) {
+func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
-	in.Header.MsgId = NextMsgIdCall()()
-	return RecvFromNATS(s, m)
+	if in.Header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
+	}
+	return RecvFromNATS(s, in)
 }
 
 func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
-	in.Header.MsgId = NextMsgIdCall()()
+	if in.Header.MsgId == 0 {
+		in.Header.MsgId = NextMsgIdCall()()
+	}
 	return s.Pubs.Publish(in)
 }

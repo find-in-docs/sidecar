@@ -100,7 +100,8 @@ message UnsubMsgResponse {
 }
 
 message Receive {
-	string topic = 1;
+	Header header = 1;
+	string topic = 2;
 }
 
 // Change this to SubTopicMsg. This is the message coming from NATS server
