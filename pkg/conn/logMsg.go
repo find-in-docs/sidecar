@@ -45,7 +45,7 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
-		MsgId:       0,
+		MsgId:       NextMsgIdCall()(),
 	}
 
 	rspHeader := pb.ResponseHeader{

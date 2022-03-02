@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
@@ -12,6 +13,24 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
+
+type MsgID struct {
+	mu    sync.Mutex
+	Value uint64
+}
+
+func NextMsgIdCall() func() uint64 {
+
+	var MsgId MsgID
+
+	return func() uint64 {
+		MsgId.mu.Lock()
+		defer MsgId.mu.Unlock()
+
+		MsgId.Value += 1
+		return MsgId.Value
+	}
+}
 
 type SC struct {
 	client pb.SidecarClient
@@ -51,7 +70,7 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 		SrcServType: serviceName,
 		DstServType: "sidecar",
 		ServId:      []byte(""),
-		MsgId:       uint32(0),
+		MsgId:       NextMsgIdCall()(),
 	}
 
 	sc := &SC{client, &header}

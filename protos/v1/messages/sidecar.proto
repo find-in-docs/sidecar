@@ -24,7 +24,7 @@ message Header {
 	string srcServType = 2;
 	string dstServType = 3;
 	bytes servId = 4;
-	uint32 msgId = 5;
+	uint64 msgId = 5;
 }
 
 enum Status {

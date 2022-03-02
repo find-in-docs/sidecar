@@ -33,7 +33,7 @@ func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
-		MsgId:       0,
+		MsgId:       NextMsgIdCall()(),
 	}
 
 	rspHeader := pb.ResponseHeader{

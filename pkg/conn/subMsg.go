@@ -57,7 +57,7 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
-		MsgId:       0,
+		MsgId:       NextMsgId()(),
 	}
 	subs.header = &header
 
@@ -126,7 +126,7 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 		DstServType: srcHeader.GetSrcServType(),
 		SrcServType: srcHeader.GetDstServType(),
 		ServId:      srcHeader.GetServId(),
-		MsgId:       0,
+		MsgId:       NextMsgId()(),
 	}
 	subs.header = &header
 
