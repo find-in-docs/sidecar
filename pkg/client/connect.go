@@ -103,12 +103,12 @@ func (sc *SC) Register(serviceName string) error {
 	}
 
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
-	fmt.Printf("Registration msg sent: %v\n", rMsg)
+	scconn.PrintRegistrationMsg("Registration msg sent:", rMsg)
 	if err != nil {
 		sc.Log("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
-	fmt.Printf("Registration rsp received: %v\n", rRsp)
+	scconn.PrintRegistrationRsp("Registration rsp received:", rRsp)
 
 	sc.header.ServId = rRsp.Header.ServId
 
@@ -194,7 +194,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 	}
 
 	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
-	fmt.Printf("Sub message sent: %v\n", &subMsg)
+	scconn.PrintSubMsg("Sub message sent:", &subMsg)
 	if err != nil {
 		sc.Log("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
 			topic, err)
@@ -247,7 +247,7 @@ func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicR
 	for {
 		subTopicRsp, err := sc.Recv(topic)
 		if err != nil {
-			sc.Log("Error receiving from sidecar: %#v\n", err)
+			// sc.Log("Error receiving from sidecar: %#v\n", err)
 			break
 		}
 
@@ -269,7 +269,7 @@ func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {
-		sc.Log("Could not receive from sidecar - err: %v\n", err)
+		// sc.Log("Could not receive from sidecar - err: %v\n", err)
 		return nil, err
 	}
 

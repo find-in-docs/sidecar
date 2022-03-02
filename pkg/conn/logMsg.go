@@ -35,7 +35,8 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
 	l.logs <- in
 
-	fmt.Printf("Received LogMsg: %v\n", in)
+	fmt.Printf("Received LogMsg:\n\tHeader: %s\n\tMsg: %s\n",
+		in.Header, in.Msg)
 
 	srcHeader := in.GetHeader()
 	header := pb.Header{
@@ -69,7 +70,8 @@ func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 		for {
 			select {
 			case l = <-logs.logs:
-				fmt.Printf("Got log msg:\n\t%v\n", l)
+				fmt.Printf("Got log msg:\n\tHeader: %s\n\tMsg: %s\n",
+					l.Header, l.Msg)
 
 				header = l.GetHeader()
 				header.MsgId = NextMsgId()

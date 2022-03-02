@@ -33,9 +33,15 @@ func InitSubs(natsConn *Conn, srv *Server) {
 	}
 }
 
+func PrintSubMsg(prefix string, m *pb.SubMsg) {
+
+	fmt.Printf("Received SubMsg:\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%d\n",
+		m.Header, m.Topic, m.ChanSize)
+}
+
 func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
-	fmt.Printf("Received SubMsg: %v\n", in)
+	PrintSubMsg("Received SubMsg:", in)
 	topic := in.GetTopic()
 	chanSize := in.GetChanSize()
 
@@ -43,7 +49,6 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 	subs.natsMsgs[topic] = topicMsgs
 
 	subscription, err := subs.natsConn.Subscribe(topic, func(m *nats.Msg) {
-		fmt.Printf("Received msg from NATS: %v\n", m)
 		subs.natsMsgs[topic] <- m
 	})
 	if err != nil {
@@ -79,7 +84,6 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
 	natsMsgs, ok := srv.Subs.natsMsgs[in.Topic]
-	fmt.Printf("ok: %v\nnatsMsgs: %v\n", ok, natsMsgs)
 	if !ok {
 		return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
 	}
@@ -89,7 +93,8 @@ func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 		return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
 	}
 
-	fmt.Printf("Got msg from NATS server:\n\t%#v\n\ttopic:%s", m, in.Topic)
+	fmt.Printf("Got msg from NATS server:\n\tHeader:%s\n\tTopic: %s\n",
+		in.Header, in.Topic)
 
 	header := srv.Subs.header
 	header.MsgType = pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP
@@ -103,7 +108,8 @@ func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
 func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
-	fmt.Printf("Received UnsubMsg: %v\n", in)
+	fmt.Printf("Received UnsubMsg:\n\tHeader: %s\n\tTopic: %s\n",
+		in.Header, in.Topic)
 	topic := in.GetTopic()
 
 	if _, ok := subs.subscriptions[topic]; !ok {
