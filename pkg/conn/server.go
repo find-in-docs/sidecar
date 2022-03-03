@@ -49,6 +49,7 @@ func PrintRegistrationMsgRsp(prefix string, m *pb.RegistrationMsgResponse) {
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {
 
+	in.Header.MsgId = NextMsgId()
 	PrintRegistrationMsg("Received RegistrationMsg:", in)
 
 	rspHeader := pb.ResponseHeader{
@@ -61,9 +62,6 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		DstServType: in.Header.SrcServType,
 		ServId:      servId(),
 	}
-	if header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
-	}
 	s.Header = &header
 
 	regRsp := &pb.RegistrationMsgResponse{
@@ -71,6 +69,8 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
+	regRsp.Header.MsgId = NextMsgId()
+
 	PrintRegistrationMsgRsp("Sending regRsp:", regRsp)
 
 	return regRsp, nil
@@ -78,40 +78,70 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 
 func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
-	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
+	in.Header.MsgId = NextMsgId()
+	PrintLogMsg("Received LogMsg:", in)
+
+	m, err := s.Logs.ReceivedLogMsg(in)
+	if err == nil {
+		m.Header.MsgId = NextMsgId()
+		PrintLogMsgRsp("Sending LogMsgResponse:", m)
 	}
-	return s.Logs.ReceivedLogMsg(in)
+
+	return m, err
 }
 
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
-	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
+	in.Header.MsgId = NextMsgId()
+	PrintSubMsg("Received SubMsg:", in)
+
+	m, err := s.Subs.Subscribe(in)
+	if err == nil {
+		m.Header.MsgId = NextMsgId()
+		PrintSubMsgRsp("Sending SubMsgRsp:", m)
 	}
-	return s.Subs.Subscribe(in)
+
+	return m, err
 }
 
 func (s *Server) Unsub(ctx context.Context, in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
-	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
+	in.Header.MsgId = NextMsgId()
+	PrintUnsubMsg("Received UnsubMsg:", in)
+
+	m, err := s.Subs.Unsubscribe(in)
+	if err == nil {
+		m.Header.MsgId = NextMsgId()
+		PrintUnsubMsgRsp("Sending UnsubMsgRsp:", m)
 	}
-	return s.Subs.Unsubscribe(in)
+
+	return m, err
 }
 
 func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
-	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
+	in.Header.MsgId = NextMsgId()
+	PrintRecvMsg("Received Receive:", in)
+
+	m, err := RecvFromNATS(s, in)
+	if err == nil {
+		m.Header.MsgId = NextMsgId()
+		PrintSubTopicRsp("Sending SubTopicRsp:", m)
 	}
-	return RecvFromNATS(s, in)
+
+	return m, err
 }
 
 func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
-	if in.Header.MsgId == 0 {
-		in.Header.MsgId = NextMsgId()
+	in.Header.MsgId = NextMsgId()
+	PrintPubMsg("Received PubMsg:", in)
+
+	m, err := s.Pubs.Publish(in)
+	if err == nil {
+		m.Header.MsgId = NextMsgId()
+		PrintPubMsgRsp("Sending PubMsgResponse:", m)
 	}
-	return s.Pubs.Publish(in)
+
+	return m, err
 }

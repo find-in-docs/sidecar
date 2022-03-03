@@ -21,7 +21,6 @@ func InitPubs(natsConn *Conn, srv *Server) {
 
 func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
-	fmt.Printf("Received PubMsg: %v\n", in)
 	topic := in.GetTopic()
 	data := in.GetMsg()
 
@@ -49,4 +48,16 @@ func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 	}
 
 	return &pubMsgRsp, nil
+}
+
+func PrintPubMsg(prefix string, m *pb.PubMsg) {
+
+	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\t:Msg: %s\n",
+		m.Header, m.Topic, m.Msg)
+}
+
+func PrintPubMsgRsp(prefix string, m *pb.PubMsgResponse) {
+
+	fmt.Printf("%s\n\tHeader: %s\n\tRspHeader: %s\n\t:Msg: %s\n",
+		m.Header, m.RspHeader, m.Msg)
 }
