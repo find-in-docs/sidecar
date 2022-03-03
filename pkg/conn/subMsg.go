@@ -35,8 +35,14 @@ func InitSubs(natsConn *Conn, srv *Server) {
 
 func PrintSubMsg(prefix string, m *pb.SubMsg) {
 
-	fmt.Printf("Received SubMsg:\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%d\n",
-		m.Header, m.Topic, m.ChanSize)
+	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%d\n",
+		prefix, m.Header, m.Topic, m.ChanSize)
+}
+
+func PrintSubMsgRsp(prefix string, m *pb.SubMsgResponse) {
+
+	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%s\n",
+		prefix, m.Header, m.RspHeader, m.Msg)
 }
 
 func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
@@ -71,14 +77,21 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 		Status: uint32(pb.Status_OK),
 	}
 
-	subMsgRsp := pb.SubMsgResponse{
+	subMsgRsp := &pb.SubMsgResponse{
 
 		Header:    &header,
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
 
-	return &subMsgRsp, nil
+	PrintSubMsgRsp("Sending SubMsgRsp:", subMsgRsp)
+	return subMsgRsp, nil
+}
+
+func PrintSubTopicRsp(prefix string, m *pb.SubTopicResponse) {
+
+	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tMsg: %s\n",
+		prefix, m.Header, m.Topic, m.Msg)
 }
 
 func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
@@ -99,17 +112,24 @@ func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 	header := srv.Subs.header
 	header.MsgType = pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP
 
-	return &pb.SubTopicResponse{
+	subTopicRsp := &pb.SubTopicResponse{
 		Header: header,
 		Topic:  m.Subject,
 		Msg:    m.Data,
-	}, nil
+	}
+
+	PrintSubTopicRsp("Sending SubTopicRsp:", subTopicRsp)
+	return subTopicRsp, nil
+}
+
+func PrintUnsubMsg(prefix string, m *pb.UnsubMsg) {
+
+	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n",
+		prefix, m.Header, m.Topic)
 }
 
 func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
-	fmt.Printf("Received UnsubMsg:\n\tHeader: %s\n\tTopic: %s\n",
-		in.Header, in.Topic)
 	topic := in.GetTopic()
 
 	if _, ok := subs.subscriptions[topic]; !ok {

@@ -36,15 +36,15 @@ func PrintRegistrationMsg(prefix string, m *pb.RegistrationMsg) {
 	fmt.Printf("\n\tHeader: %s\n\tserviceName: %s",
 		m.Header, m.ServiceName)
 	fmt.Printf("\n\tcircuitFailureThreshold: %d\n\tdebounceDelay: %s",
-		m.CircuitFailureThreshold, m.DebounceDelay)
-	fmt.Printf("\n\tretryNum: %d\n\tretryDelay: %s",
-		m.RetryNum, m.RetryDelay)
+		*m.CircuitFailureThreshold, m.DebounceDelay)
+	fmt.Printf("\n\tretryNum: %d\n\tretryDelay: %s\n",
+		*m.RetryNum, m.RetryDelay)
 }
 
-func PrintRegistrationRsp(prefix string, m *pb.RegistrationMsgResponse) {
+func PrintRegistrationMsgRsp(prefix string, m *pb.RegistrationMsgResponse) {
 
-	fmt.Printf("Sending regRsp:\n\tHeader: %s\n\tRspHeader: %s\n\tMsg: %s\n",
-		m.Header, m.RspHeader, m.Msg)
+	fmt.Printf("%s\n\tHeader: %s\n\tRspHeader: %s\n\tMsg: %s\n",
+		prefix, m.Header, m.RspHeader, m.Msg)
 }
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {
@@ -71,7 +71,7 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		RspHeader: &rspHeader,
 		Msg:       "OK",
 	}
-	PrintRegistrationRsp("Sending regRsp:", regRsp)
+	PrintRegistrationMsgRsp("Sending regRsp:", regRsp)
 
 	return regRsp, nil
 }

@@ -108,7 +108,8 @@ func (sc *SC) Register(serviceName string) error {
 		sc.Log("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
-	scconn.PrintRegistrationRsp("Registration rsp received:", rRsp)
+
+	scconn.PrintRegistrationMsgRsp("Registration rsp received:", rRsp)
 
 	sc.header.ServId = rRsp.Header.ServId
 
@@ -200,7 +201,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 			topic, err)
 		return err
 	}
-	fmt.Printf("Sub rsp received: %v\n", subRsp)
+	scconn.PrintSubMsgRsp("Sub rsp received:", subRsp)
 
 	if subRsp.RspHeader.Status != uint32(pb.Status_OK) {
 		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
@@ -223,7 +224,7 @@ func (sc *SC) Unsub(topic string) error {
 	}
 
 	unsubRsp, err := sc.client.Unsub(context.Background(), &unsubMsg)
-	fmt.Printf("Unsub message sent: %v\n", &unsubMsg)
+	scconn.PrintUnsubMsg("Unsub message sent:", &unsubMsg)
 	if err != nil {
 		sc.Log("Could not unsubscribe from topic:\n\ttopic: %s\n", topic, err)
 		return err
@@ -273,6 +274,6 @@ func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Client received from sidecar: %v\n", subTopicRsp)
+	scconn.PrintSubTopicRsp("Client received from sidecar", subTopicRsp)
 	return subTopicRsp, nil
 }
