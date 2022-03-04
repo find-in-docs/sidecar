@@ -17,6 +17,7 @@ import (
 type SC struct {
 	client pb.SidecarClient
 	header *pb.Header
+	logger *Logger
 }
 
 func InitSidecar(serviceName string) *SC {
@@ -48,14 +49,15 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 	client := pb.NewSidecarClient(conn)
 	fmt.Printf("GRPC connection to sidecar created\n")
 
-	header := pb.Header{
+	header := &pb.Header{
 		SrcServType: serviceName,
 		DstServType: "sidecar",
 		ServId:      []byte(""),
 		MsgId:       0,
 	}
 
-	sc := &SC{client, &header}
+	logger := NewLogger(&client, header)
+	sc := &SC{client, header, logger}
 	err = sc.Register(serviceName)
 	if err != nil {
 		fmt.Printf("Error registering client:\n\terr: %v\n", err)
@@ -75,7 +77,7 @@ func (sc *SC) Register(serviceName string) error {
 	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
 	debounceDelayDuration, err := time.ParseDuration("5s")
 	if err != nil {
-		sc.Log("Error creating Golang time duration.\nerr: %v\n", err)
+		sc.logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
 		return err
 	}
 	debounceDelay := durationpb.New(debounceDelayDuration)
@@ -84,7 +86,7 @@ func (sc *SC) Register(serviceName string) error {
 
 	retryDelayDuration, err := time.ParseDuration("2s")
 	if err != nil {
-		sc.Log("Error creating Golang time duration.\nerr: %v\n", err)
+		sc.logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
 		return err
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
@@ -105,7 +107,7 @@ func (sc *SC) Register(serviceName string) error {
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
 	scconn.PrintRegistrationMsg("Registration msg sent:", rMsg)
 	if err != nil {
-		sc.Log("Sending Registration caused error:\n\terr: %v\n", err)
+		sc.logger.Log("Sending Registration caused error:\n\terr: %v\n", err)
 		return err
 	}
 
@@ -167,14 +169,14 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
 	fmt.Printf("Pub message sent: %v\n", pubMsg)
 	if err != nil {
-		sc.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
+		sc.logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
 	}
 	fmt.Printf("Pub rsp received: %v\n", pubRsp)
 
 	if pubRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
+		sc.logger.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
 		return err
 	}
@@ -197,14 +199,14 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
 	scconn.PrintSubMsg("Sub message sent:", &subMsg)
 	if err != nil {
-		sc.Log("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
+		sc.logger.Log("Could not subscribe to topic: %s\n\tmessage:\n\terr: %v\n",
 			topic, err)
 		return err
 	}
 	scconn.PrintSubMsgRsp("Sub rsp received:", subRsp)
 
 	if subRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
+		sc.logger.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
 			topic, err)
 		return err
 	}
@@ -226,12 +228,12 @@ func (sc *SC) Unsub(topic string) error {
 	unsubRsp, err := sc.client.Unsub(context.Background(), &unsubMsg)
 	scconn.PrintUnsubMsg("Unsub message sent:", &unsubMsg)
 	if err != nil {
-		sc.Log("Could not unsubscribe from topic:\n\ttopic: %s\n", topic, err)
+		sc.logger.Log("Could not unsubscribe from topic:\n\ttopic: %s\n", topic, err)
 		return err
 	}
 
 	if unsubRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Log("Error received while unsubscribing to topic:\n\ttopic: %s\n", topic, err)
+		sc.logger.Log("Error received while unsubscribing to topic:\n\ttopic: %s\n", topic, err)
 		return err
 	}
 
@@ -248,7 +250,7 @@ func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicR
 	for {
 		subTopicRsp, err := sc.Recv(topic)
 		if err != nil {
-			// sc.Log("Error receiving from sidecar: %#v\n", err)
+			// sc.logger.Log("Error receiving from sidecar: %#v\n", err)
 			break
 		}
 
@@ -270,7 +272,7 @@ func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 
 	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
 	if err != nil {
-		// sc.Log("Could not receive from sidecar - err: %v\n", err)
+		// sc.logger.Log("Could not receive from sidecar - err: %v\n", err)
 		return nil, err
 	}
 

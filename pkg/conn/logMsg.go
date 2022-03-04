@@ -29,7 +29,7 @@ func InitLogs(natsConn *Conn, srv *Server) {
 	}
 
 	srv.Logs = &Logs{
-		logger:   log.NewLogger(true, nil, natsConn.nc, header),
+		logger:   log.NewLogger(natsConn.nc, header),
 		logs:     logs,
 		done:     done,
 		natsConn: natsConn,
