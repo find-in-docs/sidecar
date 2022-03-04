@@ -39,6 +39,9 @@ func PrintRegistrationMsg(prefix string, m *pb.RegistrationMsg) {
 		*m.CircuitFailureThreshold, m.DebounceDelay)
 	fmt.Printf("\n\tretryNum: %d\n\tretryDelay: %s\n",
 		*m.RetryNum, m.RetryDelay)
+
+	fmt.Printf("----------------\n")
+	fmt.Printf("%s\n", m.String())
 }
 
 func PrintRegistrationMsgRsp(prefix string, m *pb.RegistrationMsgResponse) {

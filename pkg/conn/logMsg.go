@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/samirgadkari/sidecar/pkg/log"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
@@ -12,6 +13,7 @@ const (
 )
 
 type Logs struct {
+	logger   *log.Logger
 	logs     chan *pb.LogMsg
 	done     chan struct{}
 	natsConn *Conn
@@ -21,8 +23,13 @@ func InitLogs(natsConn *Conn, srv *Server) {
 
 	logs := make(chan *pb.LogMsg, logChSize)
 	done := make(chan struct{})
+	header := &pb.Header{
+		DstServType: "",
+		SrcServType: "sidecar",
+	}
 
 	srv.Logs = &Logs{
+		logger:   log.NewLogger(true, nil, natsConn.nc, header),
 		logs:     logs,
 		done:     done,
 		natsConn: natsConn,
