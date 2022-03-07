@@ -17,7 +17,7 @@ func NewLogger(natsConn *nats.Conn, header *pb.Header) *Logger {
 
 	return &Logger{
 		natsConn: natsConn,
-		topic:    "search.v1.Log",
+		topic:    "search.log.v1",
 		header:   header,
 	}
 }
@@ -40,4 +40,11 @@ func (l *Logger) LogString(msg *string) error {
 	l.natsConn.Publish(l.topic, []byte(*msg))
 
 	return nil
+}
+
+func (l *Logger) LogMessage(prefix string, msg *interface{}) {
+
+	if m, ok := (*msg).(*pb.SubTopicResponse); ok {
+		l.Log(prefix, m)
+	}
 }

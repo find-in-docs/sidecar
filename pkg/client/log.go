@@ -17,7 +17,7 @@ func NewLogger(client *pb.SidecarClient, header *pb.Header) *Logger {
 
 	return &Logger{
 		client: client,
-		topic:  "search.v1.Log",
+		topic:  "search.log.v1",
 		header: header,
 	}
 }
