@@ -38,18 +38,6 @@ func InitLogs(natsConn *Conn, srv *Server) {
 	SendLogsToMsgQueue(srv.Logs, done)
 }
 
-func PrintLogMsg(prefix string, m *pb.LogMsg) {
-
-	fmt.Printf("%s:\n\tHeader: %s\n\tMsg: %s\n",
-		prefix, m.Header, m.Msg)
-}
-
-func PrintLogMsgRsp(prefix string, m *pb.LogMsgResponse) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tRspHeader: %s\n\tMsg: %s\n",
-		prefix, m.Header, m.RspHeader, m.Msg)
-}
-
 func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
 	l.logs <- in

@@ -141,39 +141,3 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	return &unsubMsgRsp, nil
 }
-
-func PrintUnsubMsg(prefix string, m *pb.UnsubMsg) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n",
-		prefix, m.Header, m.Topic)
-}
-
-func PrintUnsubMsgRsp(prefix string, m *pb.UnsubMsgResponse) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n",
-		prefix, m.Header, m.RspHeader)
-}
-
-func PrintSubMsg(prefix string, m *pb.SubMsg) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%d\n",
-		prefix, m.Header, m.Topic, m.ChanSize)
-}
-
-func PrintSubMsgRsp(prefix string, m *pb.SubMsgResponse) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tChanSize:%s\n",
-		prefix, m.Header, m.RspHeader, m.Msg)
-}
-
-func PrintRecvMsg(prefix string, m *pb.Receive) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n",
-		prefix, m.Header, m.Topic)
-}
-
-func PrintSubTopicRsp(prefix string, m *pb.SubTopicResponse) {
-
-	fmt.Printf("%s\n\tHeader: %s\n\tTopic: %s\n\tMsg: %s\n",
-		prefix, m.Header, m.Topic, m.Msg)
-}

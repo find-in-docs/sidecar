@@ -48,3 +48,8 @@ func (l *Logger) LogMessage(prefix string, msg *interface{}) {
 		l.Log(prefix, m)
 	}
 }
+
+func (l *Logger) PrintMsg(prefix string, msg interface{}) {
+
+	fmt.Printf(prefix, msg)
+}
