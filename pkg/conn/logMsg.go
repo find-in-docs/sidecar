@@ -74,8 +74,7 @@ func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
 		for {
 			select {
 			case l = <-logs.logs:
-				fmt.Printf("Got log msg:\n\tHeader: %s\n\tMsg: %s\n",
-					l.Header, l.Msg)
+				logs.logger.PrintMsg("Got log msg: %s\n", l)
 
 				header = l.GetHeader()
 				header.MsgId = NextMsgId()
