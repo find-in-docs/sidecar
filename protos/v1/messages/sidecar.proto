@@ -58,6 +58,7 @@ message RegistrationMsgResponse {
 	Header header = 1;
 	ResponseHeader rspHeader = 2;
 	string msg = 3;
+	bytes assignedServId = 4;
 }
 
 // Publish the given bytes on the given topic.

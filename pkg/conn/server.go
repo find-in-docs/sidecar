@@ -32,27 +32,31 @@ func servId() []byte {
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {
 
+	// Server does assignment of message IDs.
 	in.Header.MsgId = NextMsgId()
+
 	s.Logs.logger.PrintMsg("Received RegistrationMsg: %s\n", in)
 
-	rspHeader := pb.ResponseHeader{
-		Status: uint32(pb.Status_OK),
-	}
-
-	header := pb.Header{
-		MsgType:     pb.MsgType_MSG_TYPE_REG_RSP,
-		SrcServType: "sidecar",
-		DstServType: in.Header.SrcServType,
-		ServId:      servId(),
-	}
-	s.Header = &header
+	newServId := servId()
 
 	regRsp := &pb.RegistrationMsgResponse{
-		Header:    &header,
-		RspHeader: &rspHeader,
-		Msg:       "OK",
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_REG_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      newServId,
+			MsgId:       NextMsgId(),
+		},
+
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
+
+		Msg:            "OK",
+		AssignedServId: newServId, // assign new service ID
 	}
-	regRsp.Header.MsgId = NextMsgId()
+
+	s.Header = regRsp.Header
 
 	s.Logs.logger.PrintMsg("Sending regRsp: %s\n", regRsp)
 
