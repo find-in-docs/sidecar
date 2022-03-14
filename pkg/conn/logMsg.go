@@ -42,23 +42,20 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 
 	l.logs <- in
 
-	srcHeader := in.GetHeader()
-	header := pb.Header{
-		MsgType:     pb.MsgType_MSG_TYPE_LOG_RSP,
-		DstServType: srcHeader.GetSrcServType(),
-		SrcServType: srcHeader.GetDstServType(),
-		ServId:      srcHeader.GetServId(),
-		MsgId:       NextMsgId(),
-	}
-
-	rspHeader := pb.ResponseHeader{
-		Status: uint32(pb.Status_OK),
-	}
-
 	logRsp := &pb.LogMsgResponse{
-		Header:    &header,
-		RspHeader: &rspHeader,
-		Msg:       "OK",
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_LOG_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      getSelfServId(),
+			MsgId:       NextMsgId(),
+		},
+
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
+
+		Msg: "OK",
 	}
 
 	return logRsp, nil

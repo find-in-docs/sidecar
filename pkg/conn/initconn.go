@@ -47,6 +47,7 @@ func Initconns() (*Conn, *Server, error) {
 
 	// Initialize empty server. Load it with values you need later.
 	srv := &Server{}
+	assignedServId = createServId() // Assign new service ID to self (sidecar service)
 
 	InitGRPCconn(srv)
 

@@ -49,25 +49,20 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 	}
 	subs.subscriptions[topic] = subscription
 
-	srcHeader := in.GetHeader()
-	header := pb.Header{
-		MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
-		DstServType: srcHeader.GetSrcServType(),
-		SrcServType: srcHeader.GetDstServType(),
-		ServId:      srcHeader.GetServId(),
-	}
-	subs.header = &header
-
-	rspHeader := pb.ResponseHeader{
-
-		Status: uint32(pb.Status_OK),
-	}
-
 	subMsgRsp := &pb.SubMsgResponse{
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      getSelfServId(),
+			MsgId:       NextMsgId(),
+		},
 
-		Header:    &header,
-		RspHeader: &rspHeader,
-		Msg:       "OK",
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
+
+		Msg: "OK",
 	}
 
 	return subMsgRsp, nil
@@ -88,13 +83,18 @@ func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 	fmt.Printf("Got msg from NATS server:\n\tHeader:%s\n\tTopic: %s\n",
 		in.Header, in.Topic)
 
-	header := srv.Subs.header
-	header.MsgType = pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP
-
 	subTopicRsp := &pb.SubTopicResponse{
-		Header: header,
-		Topic:  m.Subject,
-		Msg:    m.Data,
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      getSelfServId(),
+			MsgId:       NextMsgId(),
+		},
+
+		Topic: m.Subject,
+
+		Msg: m.Data,
 	}
 
 	return subTopicRsp, nil
@@ -118,26 +118,21 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	fmt.Printf("Successfully unsubscribed from topic: %s\n", topic)
 
-	srcHeader := in.GetHeader()
-	header := pb.Header{
-		MsgType:     pb.MsgType_MSG_TYPE_UNSUB_RSP,
-		DstServType: srcHeader.GetSrcServType(),
-		SrcServType: srcHeader.GetDstServType(),
-		ServId:      srcHeader.GetServId(),
-	}
-	subs.header = &header
+	unsubMsgRsp := &pb.UnsubMsgResponse{
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_UNSUB_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      getSelfServId(),
+			MsgId:       NextMsgId(),
+		},
 
-	rspHeader := pb.ResponseHeader{
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
 
-		Status: uint32(pb.Status_OK),
-	}
-
-	unsubMsgRsp := pb.UnsubMsgResponse{
-
-		Header:    &header,
-		RspHeader: &rspHeader,
-		Msg:       "OK",
+		Msg: "OK",
 	}
 
-	return &unsubMsgRsp, nil
+	return unsubMsgRsp, nil
 }

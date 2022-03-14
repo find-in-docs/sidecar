@@ -26,25 +26,20 @@ func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 
 	pubs.natsConn.Publish(topic, data)
 
-	srcHeader := in.GetHeader()
-	header := pb.Header{
-		MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
-		DstServType: srcHeader.GetSrcServType(),
-		SrcServType: srcHeader.GetDstServType(),
-		ServId:      srcHeader.GetServId(),
-		MsgId:       NextMsgId(),
-	}
-
-	rspHeader := pb.ResponseHeader{
-
-		Status: uint32(pb.Status_OK),
-	}
-
 	pubMsgRsp := pb.PubMsgResponse{
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      getSelfServId(),
+			MsgId:       NextMsgId(),
+		},
 
-		Header:    &header,
-		RspHeader: &rspHeader,
-		Msg:       "OK",
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
+
+		Msg: "OK",
 	}
 
 	return &pubMsgRsp, nil
