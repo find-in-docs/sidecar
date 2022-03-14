@@ -45,9 +45,9 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 	logRsp := &pb.LogMsgResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_LOG_RSP,
-			SrcServType: "sidecar",
+			SrcServType: serviceType(),
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 

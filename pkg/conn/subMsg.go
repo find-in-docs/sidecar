@@ -54,7 +54,7 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 			MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
 			SrcServType: "sidecar",
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 
@@ -86,9 +86,9 @@ func RecvFromNATS(srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 	subTopicRsp := &pb.SubTopicResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_SUB_TOPIC_RSP,
-			SrcServType: "sidecar",
+			SrcServType: serviceType(),
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 
@@ -121,9 +121,9 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 	unsubMsgRsp := &pb.UnsubMsgResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_UNSUB_RSP,
-			SrcServType: "sidecar",
+			SrcServType: serviceType(),
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 

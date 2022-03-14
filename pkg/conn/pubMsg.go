@@ -29,9 +29,9 @@ func (pubs *Pubs) Publish(in *pb.PubMsg) (*pb.PubMsgResponse, error) {
 	pubMsgRsp := pb.PubMsgResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
-			SrcServType: "sidecar",
+			SrcServType: serviceType(),
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 

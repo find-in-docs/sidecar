@@ -2,14 +2,9 @@ package conn
 
 import (
 	"context"
-	"fmt"
-	"os"
 
-	"github.com/google/uuid"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
-
-var assignedServId []byte
 
 type Server struct {
 	pb.UnimplementedSidecarServer
@@ -17,22 +12,6 @@ type Server struct {
 	Logs *Logs
 	Pubs *Pubs
 	Subs *Subs
-}
-
-func createServId() []byte {
-	uuid := uuid.New()
-	servId, err := uuid.MarshalText()
-	if err != nil {
-		fmt.Printf("Error converting UUID: %v to text\n\terr: %v\n", servId, err)
-		os.Exit(-1)
-	}
-
-	return servId
-}
-
-func getSelfServId() []byte {
-
-	return assignedServId
 }
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {
@@ -45,9 +24,9 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 	regRsp := &pb.RegistrationMsgResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_REG_RSP,
-			SrcServType: "sidecar",
+			SrcServType: serviceType(),
 			DstServType: in.Header.SrcServType,
-			ServId:      getSelfServId(),
+			ServId:      serviceId()(),
 			MsgId:       NextMsgId(),
 		},
 
@@ -56,7 +35,7 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 		},
 
 		Msg:            "OK",
-		AssignedServId: createServId(), // assign new service ID to client
+		AssignedServId: createServiceId(), // assign new service ID to client
 	}
 
 	s.Logs.logger.PrintMsg("Sending regRsp: %s\n", regRsp)
