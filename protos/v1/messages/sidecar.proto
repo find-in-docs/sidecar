@@ -42,6 +42,11 @@ message ResponseHeader {
 
 message Empty {}
 
+message RetryBehavior{
+	optional uint32 retryNum = 1;
+	optional google.protobuf.Duration retryDelay = 2;
+}
+
 message RegistrationMsg {
 
 	Header header = 1;
@@ -49,8 +54,7 @@ message RegistrationMsg {
 	string serviceName = 2;
 	optional uint32 circuitFailureThreshold = 3;
 	optional google.protobuf.Duration debounceDelay = 4;
-	optional uint32 retryNum = 5;
-	optional google.protobuf.Duration retryDelay = 6;
+	optional RetryBehavior Retry = 5;
 }
 
 message RegistrationMsgResponse {
@@ -66,6 +70,7 @@ message PubMsg {
 	Header header = 1;
 	string topic = 2;
 	bytes msg = 3;
+	optional RetryBehavior Retry = 4;
 }
 
 message PubMsgResponse {

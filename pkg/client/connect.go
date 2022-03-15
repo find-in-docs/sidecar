@@ -99,8 +99,12 @@ func (sc *SC) Register(serviceName string) error {
 		ServiceName:             serviceName,
 		CircuitFailureThreshold: &circuitConsecutiveFailures,
 		DebounceDelay:           debounceDelay,
-		RetryNum:                &retryNum,
-		RetryDelay:              retryDelay,
+
+		Retry: &pb.RetryBehavior{
+
+			RetryNum:   &retryNum,
+			RetryDelay: retryDelay,
+		},
 	}
 
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
