@@ -8,6 +8,7 @@ BIN_NAME=./bin/sc
 .PHONY: all init genstubs build run clean
 
 # The all target is the default target when make is called without any arguments.
+# This is because it is the first target whose name does not start with a '.'
 all: clean | run
 
 init:
@@ -29,6 +30,10 @@ build: | ${EXEDIR}
 
 run: build
 	./${BIN_NAME} serve
+
+test:
+	- ./${BIN_NAME} serve &
+	go test -v ./...
 
 clean:
 	go clean

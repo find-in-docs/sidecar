@@ -19,10 +19,10 @@ type SC struct {
 	Logger *Logger
 }
 
-func InitSidecar(serviceName string) *SC {
+func InitSidecar(serviceName string, regParams *pb.RegistrationParams) *SC {
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
-	_, sidecar, err := Connect(serviceName, sidecarServiceAddr)
+	_, sidecar, err := Connect(serviceName, sidecarServiceAddr, regParams)
 	if err != nil {
 		fmt.Printf("Error connecting to client: %v\n", err)
 		os.Exit(-1)
@@ -31,7 +31,7 @@ func InitSidecar(serviceName string) *SC {
 	return sidecar
 }
 
-func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, error) {
+func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationParams) (*grpc.ClientConn, *SC, error) {
 
 	// var opts []grpc.DialOption
 
@@ -57,7 +57,7 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 
 	logger := NewLogger(&client, header)
 	sc := &SC{client, header, logger}
-	err = sc.Register(serviceName)
+	err = sc.Register(serviceName, regParams)
 	if err != nil {
 		fmt.Printf("Error registering client:\n\terr: %v\n", err)
 		os.Exit(-1)
@@ -66,29 +66,45 @@ func Connect(serviceName string, serverAddr string) (*grpc.ClientConn, *SC, erro
 	return conn, sc, nil
 }
 
-func (sc *SC) Register(serviceName string) error {
+func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) error {
 
-	var circuitConsecutiveFailures uint32 = 3
+	var rParams *pb.RegistrationParams
 
-	// Go Duration is in the time package: https://pkg.go.dev/time#Duration
-	// Go Duration maps to protobuf Duration.
-	// You can convert between them using durationpb:
-	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
-	debounceDelayDuration, err := time.ParseDuration("5s")
-	if err != nil {
-		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-		return err
+	rParams = regParams
+	if rParams == nil {
+		var circuitConsecutiveFailures uint32 = 3
+
+		// Go Duration is in the time package: https://pkg.go.dev/time#Duration
+		// Go Duration maps to protobuf Duration.
+		// You can convert between them using durationpb:
+		//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
+		debounceDelayDuration, err := time.ParseDuration("5s")
+		if err != nil {
+			sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
+			return err
+		}
+		debounceDelay := durationpb.New(debounceDelayDuration)
+
+		var retryNum uint32 = 2
+
+		retryDelayDuration, err := time.ParseDuration("2s")
+		if err != nil {
+			sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
+			return err
+		}
+		retryDelay := durationpb.New(retryDelayDuration)
+
+		rParams = &pb.RegistrationParams{
+			CircuitFailureThreshold: &circuitConsecutiveFailures,
+			DebounceDelay:           debounceDelay,
+
+			Retry: &pb.RetryBehavior{
+				RetryNum:   &retryNum,
+				RetryDelay: retryDelay,
+			},
+		}
 	}
-	debounceDelay := durationpb.New(debounceDelayDuration)
 
-	var retryNum uint32 = 2
-
-	retryDelayDuration, err := time.ParseDuration("2s")
-	if err != nil {
-		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-		return err
-	}
-	retryDelay := durationpb.New(retryDelayDuration)
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_REG
 	header.MsgId = 0
@@ -96,15 +112,8 @@ func (sc *SC) Register(serviceName string) error {
 	rMsg := &pb.RegistrationMsg{
 		Header: header,
 
-		ServiceName:             serviceName,
-		CircuitFailureThreshold: &circuitConsecutiveFailures,
-		DebounceDelay:           debounceDelay,
-
-		Retry: &pb.RetryBehavior{
-
-			RetryNum:   &retryNum,
-			RetryDelay: retryDelay,
-		},
+		ServiceName: serviceName,
+		RegParams:   rParams,
 	}
 
 	rRsp, err := sc.client.Register(context.Background(), rMsg)

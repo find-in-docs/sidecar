@@ -4,46 +4,47 @@ import (
 	"testing"
 	"time"
 
-	"protos/go/messagespb"
-
+	"github.com/samirgadkari/sidecar/pkg/client"
+	"github.com/samirgadkari/sidecar/pkg/config"
+	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestRegsitration(t *testing.T) {
 
-	debounceDur, err := time.ParseDuration("5s")
+	config.Load()
+
+	var circuitConsecutiveFailures uint32 = 3
+
+	// Go Duration is in the time package: https://pkg.go.dev/time#Duration
+	// Go Duration maps to protobuf Duration.
+	// You can convert between them using durationpb:
+	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
+	debounceDelayDuration, err := time.ParseDuration("5s")
 	if err != nil {
-		t.Errorf("Failed: Cannot parse debounce duration: err: %v\n", err)
+		t.Errorf("Error creating Golang time duration.\nerr: %v\n", err)
 	}
+	debounceDelay := durationpb.New(debounceDelayDuration)
 
-	retryDelay, err := time.ParseDuration("2s")
+	var retryNum uint32 = 2
+
+	retryDelayDuration, err := time.ParseDuration("2s")
 	if err != nil {
-		t.Errorf("Failed: Cannot parse retry duration: err: %v\n", err)
+		t.Errorf("Error creating Golang time duration.\nerr: %v\n", err)
 	}
+	retryDelay := durationpb.New(retryDelayDuration)
 
-	rMsg := messagespb.RegistrationMsg{
-		messagespb.RegistrationMsg.Header: {
-			ServType: messagespb.IMPORT,
-			ServId:   100,
-			RegId:    200,
-			MsgId:    300,
-		},
+	rParams := &pb.RegistrationParams{
+		CircuitFailureThreshold: &circuitConsecutiveFailures,
+		DebounceDelay:           debounceDelay,
 
-		messagespb.Limit.Circuit: {
-			FailureThreshold: 3,
-		},
-		messagespb.Limit.Debounce: {
-			Delay: durationpb.New(debounceDur),
-		},
-		messagespb.Limit.Retry: {
-			Retries: 2,
-			Delay:   durationpb.New(retryDelay),
+		Retry: &pb.RetryBehavior{
+			RetryNum:   &retryNum,
+			RetryDelay: retryDelay,
 		},
 	}
 
-	if err := conn.RegisterMsg(&rMsg); err == nil {
-		t.Errorf("Failed. RegisterMsg returned err: %v\n", err)
-	}
+	_ = client.InitSidecar("testing", rParams)
 
 	t.Logf("Success !")
 }
