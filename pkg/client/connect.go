@@ -143,7 +143,7 @@ func (sc *SC) Pub(topic string, data []byte) error {
 	}
 
 	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
-	sc.Logger.Log("Pub message sent: %s\n", pubMsg)
+	sc.Logger.Log("Pub message sent: %s\n", pubMsg.String())
 	if err != nil {
 		sc.Logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %v\n\terr: %v\n",
 			topic, data, err)
