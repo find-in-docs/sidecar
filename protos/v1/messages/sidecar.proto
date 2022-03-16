@@ -47,14 +47,19 @@ message RetryBehavior{
 	optional google.protobuf.Duration retryDelay = 2;
 }
 
+message RegistrationParams {
+
+	optional uint32 circuitFailureThreshold = 3;
+	optional google.protobuf.Duration debounceDelay = 4;
+	optional RetryBehavior Retry = 5;
+}	
+
 message RegistrationMsg {
 
 	Header header = 1;
 
 	string serviceName = 2;
-	optional uint32 circuitFailureThreshold = 3;
-	optional google.protobuf.Duration debounceDelay = 4;
-	optional RetryBehavior Retry = 5;
+	RegistrationParams regParams = 3;
 }
 
 message RegistrationMsgResponse {
