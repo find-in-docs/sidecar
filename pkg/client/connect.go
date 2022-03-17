@@ -66,42 +66,54 @@ func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationPa
 	return conn, sc, nil
 }
 
+func DefaultRegParams(sc *SC) (*pb.RegistrationParams, error) {
+
+	var circuitConsecutiveFailures uint32 = 3
+
+	// Go Duration is in the time package: https://pkg.go.dev/time#Duration
+	// Go Duration maps to protobuf Duration.
+	// You can convert between them using durationpb:
+	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
+	debounceDelayDuration, err := time.ParseDuration("5s")
+	if err != nil {
+		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
+		return nil, err
+	}
+	debounceDelay := durationpb.New(debounceDelayDuration)
+
+	var retryNum uint32 = 2
+
+	retryDelayDuration, err := time.ParseDuration("2s")
+	if err != nil {
+		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
+		return nil, err
+	}
+	retryDelay := durationpb.New(retryDelayDuration)
+
+	return &pb.RegistrationParams{
+		CircuitFailureThreshold: &circuitConsecutiveFailures,
+		DebounceDelay:           debounceDelay,
+
+		Retry: &pb.RetryBehavior{
+			RetryNum:   &retryNum,
+			RetryDelay: retryDelay,
+		},
+	}, nil
+}
+
 func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) error {
 
 	var rParams *pb.RegistrationParams
 
 	rParams = regParams
 	if rParams == nil {
-		var circuitConsecutiveFailures uint32 = 3
 
-		// Go Duration is in the time package: https://pkg.go.dev/time#Duration
-		// Go Duration maps to protobuf Duration.
-		// You can convert between them using durationpb:
-		//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
-		debounceDelayDuration, err := time.ParseDuration("5s")
+		var err error
+
+		rParams, err = DefaultRegParams(sc)
 		if err != nil {
-			sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-			return err
-		}
-		debounceDelay := durationpb.New(debounceDelayDuration)
-
-		var retryNum uint32 = 2
-
-		retryDelayDuration, err := time.ParseDuration("2s")
-		if err != nil {
-			sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-			return err
-		}
-		retryDelay := durationpb.New(retryDelayDuration)
-
-		rParams = &pb.RegistrationParams{
-			CircuitFailureThreshold: &circuitConsecutiveFailures,
-			DebounceDelay:           debounceDelay,
-
-			Retry: &pb.RetryBehavior{
-				RetryNum:   &retryNum,
-				RetryDelay: retryDelay,
-			},
+			fmt.Printf("Error creating default registration params\n\terr: %v\n", err)
+			os.Exit(-1)
 		}
 	}
 
