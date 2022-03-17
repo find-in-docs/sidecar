@@ -142,7 +142,7 @@ func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) err
 	return nil
 }
 
-func (sc *SC) Pub(topic string, data []byte, rb pb.RetryBehavior) error {
+func (sc *SC) Pub(topic string, data []byte, rb *pb.RetryBehavior) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_PUB
@@ -152,7 +152,7 @@ func (sc *SC) Pub(topic string, data []byte, rb pb.RetryBehavior) error {
 		Header: sc.header,
 		Topic:  topic,
 		Msg:    data,
-		Retry:  &rb,
+		Retry:  rb,
 	}
 
 	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
