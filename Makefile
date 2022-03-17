@@ -1,7 +1,9 @@
 # This makes sure the commands are run within a BASH shell.
 SHELL := /bin/bash
 EXEDIR := ./bin
+EXENAME := sc
 BIN_NAME=./bin/sc
+BIN_NAME=${EXEDIR}/${EXENAME}
 
 # This .PHONY target will ignore any file that exists with the same name as the target
 # in your makefile, and build it regardless.
@@ -34,7 +36,7 @@ run: build
 test:
 	alacritty --working-directory ~/work/do/search/sidecar -e ./${BIN_NAME} serve &
 	go test -v ./...
-	killall sc
+	killall ${EXENAME}
 
 clean:
 	go clean
