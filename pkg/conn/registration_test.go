@@ -44,7 +44,9 @@ func TestRegsitration(t *testing.T) {
 		},
 	}
 
-	_ = client.InitSidecar("testing", rParams)
-
+	sidecar := client.InitSidecar("testing", rParams)
+	if sidecar == nil {
+		t.Errorf("Error initializing sidecar - Exiting\n")
+	}
 	t.Logf("Success !")
 }

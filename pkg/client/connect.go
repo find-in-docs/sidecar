@@ -25,7 +25,7 @@ func InitSidecar(serviceName string, regParams *pb.RegistrationParams) *SC {
 	_, sidecar, err := Connect(serviceName, sidecarServiceAddr, regParams)
 	if err != nil {
 		fmt.Printf("Error connecting to client: %v\n", err)
-		os.Exit(-1)
+		return nil
 	}
 
 	return sidecar
