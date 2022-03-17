@@ -32,8 +32,9 @@ run: build
 	./${BIN_NAME} serve
 
 test:
-	- ./${BIN_NAME} serve &
+	alacritty --working-directory ~/work/do/search/sidecar -e ./${BIN_NAME} serve &
 	go test -v ./...
+	killall sc
 
 clean:
 	go clean
