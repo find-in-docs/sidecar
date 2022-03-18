@@ -9,12 +9,16 @@ import (
 type Server struct {
 	pb.UnimplementedSidecarServer
 
-	Logs *Logs
-	Pubs *Pubs
-	Subs *Subs
+	regParams *pb.RegistrationParams
+	Logs      *Logs
+	Pubs      *Pubs
+	Subs      *Subs
 }
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {
+
+	// Record Registration parameters for later use
+	s.regParams = in.RegParams
 
 	// Server does assignment of message IDs.
 	in.Header.MsgId = NextMsgId()
