@@ -266,6 +266,5 @@ func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 	}
 
 	// Do not log message to NATS. This creates a loop.
-	fmt.Printf("Client received from sidecar: %s\n", subTopicRsp.String())
 	return subTopicRsp, nil
 }
