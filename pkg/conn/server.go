@@ -108,9 +108,15 @@ func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, er
 	in.Header.MsgId = NextMsgId()
 	s.Logs.logger.PrintMsg("Received PubMsg: %s\n", in)
 
-	m, err := s.Pubs.Publish(in)
+	var retryBehavior *pb.RetryBehavior
+	if in.Retry != nil {
+		retryBehavior = in.Retry
+	} else {
+		retryBehavior = s.Pubs.regParams.Retry
+	}
+
+	m, err := s.Pubs.Publish(in, retryBehavior)
 	if err == nil {
-		m.Header.MsgId = NextMsgId()
 		s.Logs.logger.PrintMsg("Sending PubMsgResponse: %s\n", m)
 	}
 
