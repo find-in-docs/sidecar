@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -19,7 +20,7 @@ type Logs struct {
 	natsConn *Conn
 }
 
-func InitLogs(natsConn *Conn, srv *Server) {
+func InitLogs(ctx context.Context, natsConn *Conn, srv *Server) {
 
 	logs := make(chan *pb.LogMsg, logChSize)
 	done := make(chan struct{})
@@ -35,7 +36,7 @@ func InitLogs(natsConn *Conn, srv *Server) {
 		natsConn: natsConn,
 	}
 
-	SendLogsToMsgQueue(srv.Logs, done)
+	SendLogsToMsgQueue(ctx, srv.Logs)
 }
 
 func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
@@ -61,31 +62,46 @@ func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
 	return logRsp, nil
 }
 
-func SendLogsToMsgQueue(logs *Logs, done chan struct{}) {
+func processLogMsg(logs *Logs, l *pb.LogMsg) {
 
-	var l *pb.LogMsg
 	var header *pb.Header
 	var err error
 
+	logs.logger.PrintMsg("Got log msg: %s\n", l)
+
+	header = l.GetHeader()
+	header.MsgId = NextMsgId()
+
+	err = logs.natsConn.Publish("search.log.v1", []byte(l.String()))
+	if err != nil {
+		fmt.Printf("Error publishing to NATS server: %v\n", err)
+		os.Exit(-1)
+	}
+	fmt.Printf("Server sent message\n")
+}
+
+func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
+
+	var l *pb.LogMsg
+
 	go func() {
+	LOOP:
 		for {
 			select {
 			case l = <-logs.logs:
-				logs.logger.PrintMsg("Got log msg: %s\n", l)
+				processLogMsg(logs, l)
 
-				header = l.GetHeader()
-				header.MsgId = NextMsgId()
-
-				err = logs.natsConn.Publish("search.log.v1", []byte(l.String()))
-				if err != nil {
-					fmt.Printf("Error publishing to NATS server: %v\n", err)
-					os.Exit(-1)
-				}
-				fmt.Printf("Server sent message\n")
-
-			case <-done:
+			case <-ctx.Done():
+				fmt.Printf("Logs GOROUTINE cancel signalled\n")
 				// drain logs channel here before breaking out of the forever loop
+				for i := 0; i < len(logs.logs); i++ {
+					processLogMsg(logs, <-logs.logs)
+				}
+				fmt.Printf("Breaking our of logs GOROUTINE\n")
+				break LOOP
 			}
 		}
+
+		fmt.Printf("GOROUTINE completed: SendLogsToMsgQueue\n")
 	}()
 }
