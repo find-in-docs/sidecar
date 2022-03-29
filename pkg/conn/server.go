@@ -4,15 +4,17 @@ import (
 	"context"
 
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
 	pb.UnimplementedSidecarServer
 
-	regParams *pb.RegistrationParams
-	Logs      *Logs
-	Pubs      *Pubs
-	Subs      *Subs
+	GrcpServer *grpc.Server
+	regParams  *pb.RegistrationParams
+	Logs       *Logs
+	Pubs       *Pubs
+	Subs       *Subs
 }
 
 func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.RegistrationMsgResponse, error) {

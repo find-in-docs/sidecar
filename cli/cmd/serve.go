@@ -30,7 +30,7 @@ The server will connect, and run some tests between two sidecar instances`,
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		natsConn, srv, err := conn.Initconns(ctx)
+		natsConn, srv, err := conn.Initconns()
 		if err != nil {
 			return
 		}
@@ -42,13 +42,15 @@ The server will connect, and run some tests between two sidecar instances`,
 		fmt.Println("Press the Enter key to stop")
 		fmt.Scanln()
 
-		fmt.Printf("Gracefully stopping GRCP server\n")
-		srv.GrcpServer.GracefulStop()
+		// TODO: The grcp.GracefulStop() routine is blocking forever.
+		// This is probably because some RPC is not completed.
+		// Using grcp.Stop() temporarily.
+		fmt.Printf("Stopping GRCP server\n")
+		srv.GrcpServer.Stop()
 
 		fmt.Printf("Cancelling Logs GOROUTINE\n")
 		cancel() // see if this cancels the goroutine
 
-		fmt.Printf("Waiting for cancel---\n")
 		conn.BlockForever()
 	},
 }

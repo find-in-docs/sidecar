@@ -36,10 +36,13 @@ func InitGRPCconn(srv *Server) {
 
 		pb.RegisterSidecarServer(s, srv)
 
+		srv.GrcpServer = s
+
 		fmt.Printf("Server listening at %v\n", lis.Addr())
 		if err = s.Serve(lis); err != nil {
 			fmt.Printf("Failed to serve: %v\n", err)
 		}
+		fmt.Printf("GOROUTINE for GRCP server completed\n\n")
 	}()
 }
 
