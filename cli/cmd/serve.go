@@ -5,10 +5,9 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
-	"os"
 
-	"github.com/nats-io/nats.go"
 	"github.com/samirgadkari/sidecar/pkg/config"
 	"github.com/samirgadkari/sidecar/pkg/conn"
 	"github.com/spf13/cobra"
@@ -28,42 +27,28 @@ The server will connect, and run some tests between two sidecar instances`,
 
 		config.Load()
 
-		natsConn, srv, err := conn.Initconns()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		natsConn, srv, err := conn.Initconns(ctx)
 		if err != nil {
 			return
 		}
 
-		conn.InitLogs(natsConn, srv)
+		conn.InitLogs(ctx, natsConn, srv)
 		conn.InitPubs(natsConn, srv)
 		conn.InitSubs(natsConn, srv)
 
-		numMsgs := 10
+		fmt.Println("Press the Enter key to stop")
+		fmt.Scanln()
 
-		msgs := make(chan *nats.Msg, 10)
+		fmt.Printf("Gracefully stopping GRCP server\n")
+		srv.GrcpServer.GracefulStop()
 
-		_, err = natsConn.Subscribe("client", func(msg *nats.Msg) {
+		fmt.Printf("Cancelling Logs GOROUTINE\n")
+		cancel() // see if this cancels the goroutine
 
-			fmt.Printf("Server received msg: %s\n  on topic: %s\n",
-				string(msg.Data), msg.Subject)
-
-			msgs <- msg
-
-		})
-		if err != nil {
-			fmt.Printf("Error subscribing to NATS server: %v\n", err)
-			os.Exit(-1)
-		}
-
-		for i := 0; i < numMsgs; i++ {
-
-			err = natsConn.Publish("server", []byte("++++ testing ++++"))
-			if err != nil {
-				fmt.Printf("Error publishing to NATS server: %v\n", err)
-				os.Exit(-1)
-			}
-			fmt.Printf("Server sent message\n")
-		}
-
+		fmt.Printf("Waiting for cancel---\n")
 		conn.BlockForever()
 	},
 }
