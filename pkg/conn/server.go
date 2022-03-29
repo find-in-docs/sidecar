@@ -115,7 +115,7 @@ func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, er
 		retryBehavior = s.Pubs.regParams.Retry
 	}
 
-	m, err := s.Pubs.Publish(in, retryBehavior)
+	m, err := s.Pubs.Publish(ctx, in, retryBehavior)
 	if err == nil {
 		s.Logs.logger.PrintMsg("Sending PubMsgResponse: %s\n", m)
 	}

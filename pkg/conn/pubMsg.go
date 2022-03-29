@@ -37,14 +37,16 @@ func RetryFunc(effector Effector, retries int, delay time.Duration) Effector {
 
 		for r := 0; ; r++ {
 
-			response, err := effector(ctx, m)
+			ctx2, cancel := context.WithTimeout(context.Background(), delay)
+			defer cancel()
+
+			fmt.Printf("--- Publishing msg\n")
+			response, err := effector(ctx2, m)
 			if err == nil || r >= retries {
-				if r >= retries {
-				}
 				return response, err
 			}
 
-			fmt.Printf("Attempt %d failed; retrying in %v", r+1, delay)
+			fmt.Printf("Attempt %d failed; \n\terr: %v\n\tretrying in %v", r+1, err, delay)
 
 			select {
 			case <-ctx.Done():
@@ -55,7 +57,8 @@ func RetryFunc(effector Effector, retries int, delay time.Duration) Effector {
 	}
 }
 
-func (pubs *Pubs) Publish(in *pb.PubMsg, retryBehavior *pb.RetryBehavior) (*pb.PubMsgResponse, error) {
+func (pubs *Pubs) Publish(ctx context.Context, in *pb.PubMsg,
+	retryBehavior *pb.RetryBehavior) (*pb.PubMsgResponse, error) {
 
 	topic := in.GetTopic()
 	responseTopic := topic + "_" + string(in.Header.MsgId) + "_response"
@@ -66,26 +69,25 @@ func (pubs *Pubs) Publish(in *pb.PubMsg, retryBehavior *pb.RetryBehavior) (*pb.P
 	// pubs.natsConn.Publish(topic, data)
 	msg := nats.Msg{
 		Subject: topic,
-		Reply:   topic + "_response",
+		Reply:   responseTopic,
 		Data:    data,
 	}
 
 	var retryFunc Effector
 	retryFunc = RetryFunc(pubs.Retry, int(*retryBehavior.RetryNum), retryBehavior.RetryDelay.AsDuration())
-	ctx, cancel := context.WithTimeout(context.Background(), retryBehavior.RetryDelay.AsDuration())
-	defer cancel()
 
 	reply, err := retryFunc(ctx, &msg)
+	header := pb.Header{
+		MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
+		SrcServType: serviceType(),
+		DstServType: in.Header.SrcServType,
+		ServId:      serviceId()(),
+		MsgId:       NextMsgId(),
+	}
 
 	if err != nil {
 		return &pb.PubMsgResponse{
-			Header: &pb.Header{
-				MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
-				SrcServType: serviceType(),
-				DstServType: in.Header.SrcServType,
-				ServId:      serviceId()(),
-				MsgId:       NextMsgId(),
-			},
+			Header: &header,
 
 			RspHeader: &pb.ResponseHeader{
 				Status: uint32(pb.Status_ERR_PUBLISHING),
@@ -97,13 +99,7 @@ func (pubs *Pubs) Publish(in *pb.PubMsg, retryBehavior *pb.RetryBehavior) (*pb.P
 	} else {
 
 		return &pb.PubMsgResponse{
-			Header: &pb.Header{
-				MsgType:     pb.MsgType_MSG_TYPE_PUB_RSP,
-				SrcServType: serviceType(),
-				DstServType: in.Header.SrcServType,
-				ServId:      serviceId()(),
-				MsgId:       NextMsgId(),
-			},
+			Header: &header,
 
 			RspHeader: &pb.ResponseHeader{
 				Status: uint32(pb.Status_OK),
