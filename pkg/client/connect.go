@@ -229,27 +229,50 @@ func (sc *SC) Unsub(topic string) error {
 	return nil
 }
 
-func (sc *SC) ProcessSubMsgs(topic string, chanSize uint32, f func(*pb.SubTopicResponse)) error {
+type Response struct {
+	response *pb.SubTopicResponse
+	err      error
+}
+
+func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
+	chanSize uint32, f func(*pb.SubTopicResponse)) error {
 
 	err := sc.Sub(topic, chanSize)
 	if err != nil {
 		return err
 	}
 
-	for {
-		subTopicRsp, err := sc.Recv(topic)
-		if err != nil {
-			fmt.Printf("Error receiving from sidecar: %v\n", err)
-			break
+	responseCh := sc.Recv(ctx, topic)
+
+	go func() {
+		subscribedTopic := topic
+
+		for {
+			select {
+
+			case r := <-responseCh:
+				if r.err != nil {
+					fmt.Printf("Error receiving from sidecar: %v\n", r.err)
+					_ = sc.Unsub(subscribedTopic)
+					break
+				}
+				f(r.response)
+
+			case <-ctx.Done():
+				_ = sc.Unsub(subscribedTopic)
+				err := ctx.Err()
+				if err != nil {
+					fmt.Printf("Done channel signaled: %v\n", err)
+				}
+				break
+			}
 		}
+	}()
 
-		f(subTopicRsp)
-	}
-
-	return nil
+	return err
 }
 
-func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
+func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 
 	header := sc.header
 	header.MsgId = 0
@@ -259,12 +282,36 @@ func (sc *SC) Recv(topic string) (*pb.SubTopicResponse, error) {
 		Topic:  topic,
 	}
 
-	subTopicRsp, err := sc.client.Recv(context.Background(), &recvMsg)
-	if err != nil {
-		fmt.Printf("Could not receive from sidecar - err: %v\n", err)
-		return nil, err
-	}
+	responseCh := make(chan *Response)
+
+	go func() {
+		for {
+			subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
+			if err != nil {
+				fmt.Printf("Could not receive from sidecar - err: %v\n", err)
+				responseCh <- &Response{
+					nil,
+					err,
+				}
+				break
+			}
+
+			responseCh <- &Response{
+				subTopicRsp,
+				nil,
+			}
+
+			err = ctx.Err()
+			if err != nil {
+				responseCh <- &Response{
+					nil,
+					err,
+				}
+				break
+			}
+		}
+	}()
 
 	// Do not log message to NATS. This creates a loop.
-	return subTopicRsp, nil
+	return responseCh
 }
