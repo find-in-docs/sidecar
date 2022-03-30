@@ -92,16 +92,14 @@ func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
 				processLogMsg(logs, l)
 
 			case <-ctx.Done():
-				fmt.Printf("Logs GOROUTINE cancel signalled\n")
 				// drain logs channel here before breaking out of the forever loop
 				for i := 0; i < len(logs.logs); i++ {
 					processLogMsg(logs, <-logs.logs)
 				}
-				fmt.Printf("Breaking our of logs GOROUTINE\n")
 				break LOOP
 			}
 		}
 
-		fmt.Printf("GOROUTINE completed: SendLogsToMsgQueue\n")
+		fmt.Printf("GOROUTINE 4 completed in function SendLogsToMsgQueue\n")
 	}()
 }

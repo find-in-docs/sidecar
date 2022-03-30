@@ -142,7 +142,7 @@ func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) err
 	return nil
 }
 
-func (sc *SC) Pub(topic string, data []byte, rb *pb.RetryBehavior) error {
+func (sc *SC) Pub(ctx context.Context, topic string, data []byte, rb *pb.RetryBehavior) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_PUB
@@ -155,7 +155,7 @@ func (sc *SC) Pub(topic string, data []byte, rb *pb.RetryBehavior) error {
 		Retry:  rb,
 	}
 
-	pubRsp, err := sc.client.Pub(context.Background(), &pubMsg)
+	pubRsp, err := sc.client.Pub(ctx, &pubMsg)
 	sc.Logger.Log("Pub message sent: %s\n", pubMsg.String())
 	if err != nil {
 		sc.Logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %s\n\terr: %v\n",
@@ -173,7 +173,7 @@ func (sc *SC) Pub(topic string, data []byte, rb *pb.RetryBehavior) error {
 	return nil
 }
 
-func (sc *SC) Sub(topic string, chanSize uint32) error {
+func (sc *SC) Sub(ctx context.Context, topic string, chanSize uint32) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_SUB
@@ -185,7 +185,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 		ChanSize: chanSize,
 	}
 
-	subRsp, err := sc.client.Sub(context.Background(), &subMsg)
+	subRsp, err := sc.client.Sub(ctx, &subMsg)
 	sc.Logger.Log("Sub message sent:\n\t%s\n", &subMsg)
 	if err != nil {
 		sc.Logger.Log("Could not subscribe to topic: %s\n\terr: %v\n",
@@ -203,7 +203,7 @@ func (sc *SC) Sub(topic string, chanSize uint32) error {
 	return nil
 }
 
-func (sc *SC) Unsub(topic string) error {
+func (sc *SC) Unsub(ctx context.Context, topic string) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_UNSUB
@@ -214,7 +214,7 @@ func (sc *SC) Unsub(topic string) error {
 		Topic:  topic,
 	}
 
-	unsubRsp, err := sc.client.Unsub(context.Background(), &unsubMsg)
+	unsubRsp, err := sc.client.Unsub(ctx, &unsubMsg)
 	sc.Logger.Log("Unsub message sent:\n\t%s\n", &unsubMsg)
 	if err != nil {
 		sc.Logger.Log("Could not unsubscribe from topic:\n\ttopic: %s\n\terr: %v\n", topic, err)
@@ -237,7 +237,7 @@ type Response struct {
 func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	chanSize uint32, f func(*pb.SubTopicResponse)) error {
 
-	err := sc.Sub(topic, chanSize)
+	err := sc.Sub(ctx, topic, chanSize)
 	if err != nil {
 		return err
 	}
@@ -247,29 +247,34 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	go func() {
 		subscribedTopic := topic
 
+	LOOP:
 		for {
 			select {
 
 			case r := <-responseCh:
 				if r.err != nil {
 					fmt.Printf("Error receiving from sidecar: %v\n", r.err)
-					_ = sc.Unsub(subscribedTopic)
-					break
+					_ = sc.Unsub(ctx, subscribedTopic)
+					break LOOP
 				}
+
+				// Do not log received message to NATS. This creates a loop.
+
 				f(r.response)
 
 			case <-ctx.Done():
-				_ = sc.Unsub(subscribedTopic)
-				err := ctx.Err()
-				if err != nil {
+				_ = sc.Unsub(ctx, subscribedTopic)
+
+				if ctx.Err() != nil {
 					fmt.Printf("Done channel signaled: %v\n", err)
 				}
-				break
+				break LOOP
 			}
 		}
+		fmt.Printf("GOROUTINE 2 completed in function ProcessSubMsgs\n")
 	}()
 
-	return err
+	return nil
 }
 
 func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
@@ -285,33 +290,27 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 	responseCh := make(chan *Response)
 
 	go func() {
+	LOOP:
 		for {
 			subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
 			if err != nil {
 				fmt.Printf("Could not receive from sidecar - err: %v\n", err)
-				responseCh <- &Response{
-					nil,
-					err,
-				}
-				break
+				break LOOP
 			}
+
+			// Do not log received message to NATS. This creates a loop.
 
 			responseCh <- &Response{
 				subTopicRsp,
 				nil,
 			}
 
-			err = ctx.Err()
-			if err != nil {
-				responseCh <- &Response{
-					nil,
-					err,
-				}
-				break
+			if ctx.Err() != nil {
+				break LOOP
 			}
 		}
+		fmt.Printf("GOROUTINE 1 completed in function Recv\n")
 	}()
 
-	// Do not log message to NATS. This creates a loop.
 	return responseCh
 }

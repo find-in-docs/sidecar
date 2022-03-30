@@ -42,14 +42,22 @@ The server will connect, and run some tests between two sidecar instances`,
 		fmt.Println("Press the Enter key to stop")
 		fmt.Scanln()
 
+		/* Make sure that our goroutines are all closing
 		// TODO: The grcp.GracefulStop() routine is blocking forever.
 		// This is probably because some RPC is not completed.
 		// Using grcp.Stop() temporarily.
-		fmt.Printf("Stopping GRCP server\n")
 		srv.GrcpServer.Stop()
 
-		fmt.Printf("Cancelling Logs GOROUTINE\n")
+		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> num goroutines: %d\n",
+			runtime.NumGoroutine())
 		cancel() // see if this cancels the goroutine
+
+		sleepDur, _ := time.ParseDuration("3s")
+		time.Sleep(sleepDur)
+
+		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> num goroutines: %d\n",
+			runtime.NumGoroutine())
+		*/
 
 		conn.BlockForever()
 	},

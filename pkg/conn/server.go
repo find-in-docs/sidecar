@@ -97,7 +97,7 @@ func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse
 	// Do not log message to NATS. This creates a loop.
 	s.Logs.logger.PrintMsg("Received Receive: %s\n", in)
 
-	m, err := RecvFromNATS(s, in)
+	m, err := RecvFromNATS(ctx, s, in)
 	if err == nil {
 		m.Header.MsgId = NextMsgId()
 	}

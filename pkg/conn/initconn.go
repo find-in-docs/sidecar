@@ -42,7 +42,7 @@ func InitGRPCconn(srv *Server) {
 		if err = s.Serve(lis); err != nil {
 			fmt.Printf("Failed to serve: %v\n", err)
 		}
-		fmt.Printf("GOROUTINE for GRCP server completed\n\n")
+		fmt.Printf("GOROUTINE 3 for GRCP server completed\n\n")
 	}()
 }
 
