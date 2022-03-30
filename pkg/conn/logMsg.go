@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/samirgadkari/sidecar/pkg/log"
+	"github.com/samirgadkari/sidecar/pkg/utils"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
@@ -84,22 +85,26 @@ func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
 
 	var l *pb.LogMsg
 
-	go func() {
-	LOOP:
-		for {
-			select {
-			case l = <-logs.logs:
-				processLogMsg(logs, l)
+	goroutineName := "SendLogsToMsgQueue"
+	utils.StartGoroutine(goroutineName,
+		func() {
+		LOOP:
+			for {
+				select {
+				case l = <-logs.logs:
+					processLogMsg(logs, l)
 
-			case <-ctx.Done():
-				// drain logs channel here before breaking out of the forever loop
-				for i := 0; i < len(logs.logs); i++ {
-					processLogMsg(logs, <-logs.logs)
+				case <-ctx.Done():
+					// drain logs channel here before breaking out of the forever loop
+					fmt.Printf("Number of logs in queue: %d\n", len(logs.logs))
+					for i := 0; i < len(logs.logs); i++ {
+						processLogMsg(logs, <-logs.logs)
+					}
+					break LOOP
 				}
-				break LOOP
 			}
-		}
 
-		fmt.Printf("GOROUTINE 4 completed in function SendLogsToMsgQueue\n")
-	}()
+			fmt.Printf("GOROUTINE 4 completed in function SendLogsToMsgQueue\n")
+			utils.GoroutineEnded(goroutineName)
+		})
 }

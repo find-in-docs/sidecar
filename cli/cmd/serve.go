@@ -7,9 +7,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/samirgadkari/sidecar/pkg/config"
 	"github.com/samirgadkari/sidecar/pkg/conn"
+	"github.com/samirgadkari/sidecar/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -42,22 +44,18 @@ The server will connect, and run some tests between two sidecar instances`,
 		fmt.Println("Press the Enter key to stop")
 		fmt.Scanln()
 
-		/* Make sure that our goroutines are all closing
 		// TODO: The grcp.GracefulStop() routine is blocking forever.
 		// This is probably because some RPC is not completed.
 		// Using grcp.Stop() temporarily.
 		srv.GrcpServer.Stop()
 
-		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> num goroutines: %d\n",
-			runtime.NumGoroutine())
-		cancel() // see if this cancels the goroutine
+		cancel()
 
 		sleepDur, _ := time.ParseDuration("3s")
+		fmt.Printf("Sleeping for %s seconds\n", sleepDur)
 		time.Sleep(sleepDur)
 
-		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> num goroutines: %d\n",
-			runtime.NumGoroutine())
-		*/
+		utils.ListGoroutinesRunning()
 
 		conn.BlockForever()
 	},

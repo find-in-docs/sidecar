@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/samirgadkari/sidecar/pkg/utils"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -23,7 +24,8 @@ func InitNATSconn() (*Conn, error) {
 
 func InitGRPCconn(srv *Server) {
 
-	go func() {
+	goroutineName := "InitGRCPconn"
+	utils.StartGoroutine(goroutineName, func() {
 		s := grpc.NewServer()
 
 		sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
@@ -43,7 +45,8 @@ func InitGRPCconn(srv *Server) {
 			fmt.Printf("Failed to serve: %v\n", err)
 		}
 		fmt.Printf("GOROUTINE 3 for GRCP server completed\n\n")
-	}()
+		utils.GoroutineEnded(goroutineName)
+	})
 }
 
 func Initconns() (*Conn, *Server, error) {

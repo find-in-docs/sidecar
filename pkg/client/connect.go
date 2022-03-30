@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/samirgadkari/sidecar/pkg/utils"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -244,35 +245,38 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 
 	responseCh := sc.Recv(ctx, topic)
 
-	go func() {
-		subscribedTopic := topic
+	goroutineName := "ProcessSubMsgs"
+	utils.StartGoroutine(goroutineName,
+		func() {
+			subscribedTopic := topic
 
-	LOOP:
-		for {
-			select {
+		LOOP:
+			for {
+				select {
 
-			case r := <-responseCh:
-				if r.err != nil {
-					fmt.Printf("Error receiving from sidecar: %v\n", r.err)
+				case r := <-responseCh:
+					if r.err != nil {
+						fmt.Printf("Error receiving from sidecar: %v\n", r.err)
+						_ = sc.Unsub(ctx, subscribedTopic)
+						break LOOP
+					}
+
+					// Do not log received message to NATS. This creates a loop.
+
+					f(r.response)
+
+				case <-ctx.Done():
 					_ = sc.Unsub(ctx, subscribedTopic)
+
+					if ctx.Err() != nil {
+						fmt.Printf("Done channel signaled: %v\n", err)
+					}
 					break LOOP
 				}
-
-				// Do not log received message to NATS. This creates a loop.
-
-				f(r.response)
-
-			case <-ctx.Done():
-				_ = sc.Unsub(ctx, subscribedTopic)
-
-				if ctx.Err() != nil {
-					fmt.Printf("Done channel signaled: %v\n", err)
-				}
-				break LOOP
 			}
-		}
-		fmt.Printf("GOROUTINE 2 completed in function ProcessSubMsgs\n")
-	}()
+			fmt.Printf("GOROUTINE 2 completed in function ProcessSubMsgs\n")
+			utils.GoroutineEnded(goroutineName)
+		})
 
 	return nil
 }
@@ -289,28 +293,31 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 
 	responseCh := make(chan *Response)
 
-	go func() {
-	LOOP:
-		for {
-			subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
-			if err != nil {
-				fmt.Printf("Could not receive from sidecar - err: %v\n", err)
-				break LOOP
-			}
+	goroutineName := "Recv"
+	utils.StartGoroutine(goroutineName,
+		func() {
+		LOOP:
+			for {
+				subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
+				if err != nil {
+					fmt.Printf("Could not receive from sidecar - err: %v\n", err)
+					break LOOP
+				}
 
-			// Do not log received message to NATS. This creates a loop.
+				// Do not log received message to NATS. This creates a loop.
 
-			responseCh <- &Response{
-				subTopicRsp,
-				nil,
-			}
+				responseCh <- &Response{
+					subTopicRsp,
+					nil,
+				}
 
-			if ctx.Err() != nil {
-				break LOOP
+				if ctx.Err() != nil {
+					break LOOP
+				}
 			}
-		}
-		fmt.Printf("GOROUTINE 1 completed in function Recv\n")
-	}()
+			fmt.Printf("GOROUTINE 1 completed in function Recv\n")
+			utils.GoroutineEnded(goroutineName)
+		})
 
 	return responseCh
 }
