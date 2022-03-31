@@ -20,16 +20,15 @@ type SC struct {
 	Logger *Logger
 }
 
-func InitSidecar(serviceName string, regParams *pb.RegistrationParams) *SC {
+func InitSidecar(serviceName string, regParams *pb.RegistrationParams) (*SC, error) {
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
 	_, sidecar, err := Connect(serviceName, sidecarServiceAddr, regParams)
 	if err != nil {
-		fmt.Printf("Error connecting to client: %v\n", err)
-		return nil
+		return nil, fmt.Errorf("Error connecting to client: %w\n", err)
 	}
 
-	return sidecar
+	return sidecar, nil
 }
 
 func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationParams) (*grpc.ClientConn, *SC, error) {
@@ -40,8 +39,7 @@ func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationPa
 	conn, err := grpc.Dial(serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("Error creating GRPC channel\n:\terr: %v\n", err)
-		os.Exit(-1)
+		return nil, nil, fmt.Errorf("Error creating GRPC channel: %w\n", err)
 	}
 
 	fmt.Printf("conn: %v\n", conn)
@@ -60,8 +58,7 @@ func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationPa
 	sc := &SC{client, header, logger}
 	err = sc.Register(serviceName, regParams)
 	if err != nil {
-		fmt.Printf("Error registering client:\n\terr: %v\n", err)
-		os.Exit(-1)
+		return nil, nil, fmt.Errorf("Error registering client: %w\n", err)
 	}
 
 	return conn, sc, nil
