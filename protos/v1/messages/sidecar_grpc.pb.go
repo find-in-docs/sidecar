@@ -7,6 +7,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,7 +24,7 @@ type SidecarClient interface {
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
-	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error)
+	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type sidecarClient struct {
@@ -79,8 +80,8 @@ func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*LogMsgResponse, error) {
-	out := new(LogMsgResponse)
+func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Log", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -97,7 +98,7 @@ type SidecarServer interface {
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
-	Log(context.Context, *LogMsg) (*LogMsgResponse, error)
+	Log(context.Context, *LogMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSidecarServer()
 }
 
@@ -120,7 +121,7 @@ func (UnimplementedSidecarServer) Unsub(context.Context, *UnsubMsg) (*UnsubMsgRe
 func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
 }
-func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*LogMsgResponse, error) {
+func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
 }
 func (UnimplementedSidecarServer) mustEmbedUnimplementedSidecarServer() {}

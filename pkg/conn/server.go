@@ -5,6 +5,7 @@ import (
 
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Server struct {
@@ -49,18 +50,14 @@ func (s *Server) Register(ctx context.Context, in *pb.RegistrationMsg) (*pb.Regi
 	return regRsp, nil
 }
 
-func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*pb.LogMsgResponse, error) {
+func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*emptypb.Empty, error) {
 
 	in.Header.MsgId = NextMsgId()
 	s.Logs.logger.PrintMsg("Received LogMsg: %s\n", in)
 
-	m, err := s.Logs.ReceivedLogMsg(in)
-	if err == nil {
-		m.Header.MsgId = NextMsgId()
-		s.Logs.logger.PrintMsg("Sending LogMsgResponse: %s\n", m)
-	}
+	s.Logs.ReceivedLogMsg(in)
 
-	return m, err
+	return nil, nil
 }
 
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {

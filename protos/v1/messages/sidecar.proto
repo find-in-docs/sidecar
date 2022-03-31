@@ -2,6 +2,7 @@ syntax = "proto3";
 package messages;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "github.com/samirgadkari/sidecar/protos/v1/messages";
 
@@ -39,8 +40,6 @@ enum Status {
 message ResponseHeader {
 	uint32 status = 1;
 }
-
-message Empty {}
 
 message RetryBehavior{
 	optional uint32 retryNum = 1;
@@ -142,5 +141,5 @@ service Sidecar {
 	rpc Recv (Receive) returns (SubTopicResponse);
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);
-	rpc Log (LogMsg) returns (LogMsgResponse);
+	rpc Log (LogMsg) returns (google.protobuf.Empty);
 }

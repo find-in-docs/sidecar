@@ -43,15 +43,9 @@ func (l *Logger) logString(msg *string) {
 	}
 
 	// Send message to message queue
-	logRsp, err := (*l.client).Log(context.Background(), &logMsg)
+	_, err := (*l.client).Log(context.Background(), &logMsg)
 	if err != nil {
 		fmt.Printf("Could not send log message:\n\tmsg: %s\n\terr: %v\n", *msg, err)
-		return
-	}
-
-	if logRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		fmt.Printf("Error received while logging msg:\n\tmsg: %s\n\tStatus: %d\n",
-			*msg, logRsp.RspHeader.Status)
 		return
 	}
 }

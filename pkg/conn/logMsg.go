@@ -39,27 +39,11 @@ func InitLogs(ctx context.Context, natsConn *Conn, srv *Server) {
 	SendLogsToMsgQueue(ctx, srv.Logs)
 }
 
-func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) (*pb.LogMsgResponse, error) {
+func (l *Logs) ReceivedLogMsg(in *pb.LogMsg) error {
 
 	l.logs <- in
 
-	logRsp := &pb.LogMsgResponse{
-		Header: &pb.Header{
-			MsgType:     pb.MsgType_MSG_TYPE_LOG_RSP,
-			SrcServType: serviceType(),
-			DstServType: in.Header.SrcServType,
-			ServId:      serviceId()(),
-			MsgId:       NextMsgId(),
-		},
-
-		RspHeader: &pb.ResponseHeader{
-			Status: uint32(pb.Status_OK),
-		},
-
-		Msg: "OK",
-	}
-
-	return logRsp, nil
+	return nil
 }
 
 func processLogMsg(logs *Logs, l *pb.LogMsg) {
