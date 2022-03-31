@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/samirgadkari/sidecar/pkg/log"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
@@ -57,14 +58,12 @@ func RetryFunc(effector Effector, retries int, delay time.Duration) Effector {
 	}
 }
 
-func (pubs *Pubs) Publish(ctx context.Context, in *pb.PubMsg,
+func (pubs *Pubs) Publish(ctx context.Context, logger *log.Logger, in *pb.PubMsg,
 	retryBehavior *pb.RetryBehavior) (*pb.PubMsgResponse, error) {
 
 	topic := in.GetTopic()
 	responseTopic := topic + "_" + string(in.Header.MsgId) + "_response"
 	data := in.GetMsg()
-
-	fmt.Printf(">>>>> pb.PubMsg: %s\n", in)
 
 	// pubs.natsConn.Publish(topic, data)
 	msg := nats.Msg{
@@ -86,6 +85,9 @@ func (pubs *Pubs) Publish(ctx context.Context, in *pb.PubMsg,
 	}
 
 	if err != nil {
+
+		logger.Log("Error publishing msg: %s\n\tto topic: %s\n\tresponse topic: %s\n\terr: $s",
+			in, topic, responseTopic, err.Error())
 		return &pb.PubMsgResponse{
 			Header: &header,
 

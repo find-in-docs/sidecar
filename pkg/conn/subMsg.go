@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/samirgadkari/sidecar/pkg/log"
 	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
 )
 
@@ -83,8 +84,9 @@ func RecvFromNATS(ctx context.Context, srv *Server, in *pb.Receive) (*pb.SubTopi
 			return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
 		}
 
-		fmt.Printf("Got msg from NATS server:\n\tHeader:%s\n\tTopic: %s\n",
+		s := fmt.Sprintf("Header:%s\n\tTopic: %s\n",
 			in.Header, in.Topic)
+		srv.Logs.logger.PrintMsg("Got msg from NATS server: %s\n", s)
 
 		subTopicRsp := &pb.SubTopicResponse{
 			Header: &pb.Header{
@@ -107,13 +109,12 @@ func RecvFromNATS(ctx context.Context, srv *Server, in *pb.Receive) (*pb.SubTopi
 	}
 }
 
-func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
+func (subs *Subs) Unsubscribe(logger *log.Logger, in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	topic := in.GetTopic()
 
 	if _, ok := subs.subscriptions[topic]; !ok {
-		fmt.Printf("Error - topic not found to unsubscribe:\n\ttopic: %s\n", topic)
-		return nil, fmt.Errorf("Topic not found to unsubscribe: %s\n", topic)
+		return nil, fmt.Errorf("Error - topic not found to unsubscribe:\n\ttopic: %s\n", topic)
 	}
 
 	subs.subscriptions[topic].Drain()
@@ -122,8 +123,6 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 	close(subs.natsMsgs[topic])
 	delete(subs.natsMsgs, topic)
-
-	fmt.Printf("Successfully unsubscribed from topic: %s\n", topic)
 
 	unsubMsgRsp := &pb.UnsubMsgResponse{
 		Header: &pb.Header{
@@ -140,6 +139,8 @@ func (subs *Subs) Unsubscribe(in *pb.UnsubMsg) (*pb.UnsubMsgResponse, error) {
 
 		Msg: "OK",
 	}
+
+	logger.Log("Successfully unsubscribed from topic: %s\n", topic)
 
 	return unsubMsgRsp, nil
 }

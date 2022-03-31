@@ -49,7 +49,7 @@ func (l *Logger) LogMessage(prefix string, msg *interface{}) {
 	}
 }
 
-func (l *Logger) PrintMsg(prefix string, msg interface{}) {
+func (l *Logger) PrintMsg(prefix string, msg ...interface{}) {
 
-	fmt.Printf(prefix, msg)
+	fmt.Printf(prefix, msg...)
 }
