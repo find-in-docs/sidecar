@@ -249,7 +249,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 
 				case r := <-responseCh:
 					if r.err != nil {
-						fmt.Printf("Error receiving from sidecar: %v\n", r.err)
+						sc.Logger.Log("Error receiving from sidecar: %v\n", r.err)
 						_ = sc.Unsub(ctx, subscribedTopic)
 						break LOOP
 					}
@@ -262,12 +262,12 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 					_ = sc.Unsub(ctx, subscribedTopic)
 
 					if ctx.Err() != nil {
-						fmt.Printf("Done channel signaled: %v\n", err)
+						sc.Logger.Log("Done channel signaled: %v\n", err)
 					}
 					break LOOP
 				}
 			}
-			fmt.Printf("GOROUTINE 2 completed in function ProcessSubMsgs\n")
+			sc.Logger.Log("GOROUTINE 2 completed in function ProcessSubMsgs\n")
 			utils.GoroutineEnded(goroutineName)
 		})
 
@@ -293,7 +293,7 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 			for {
 				subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
 				if err != nil {
-					fmt.Printf("Could not receive from sidecar - err: %v\n", err)
+					sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
 					break LOOP
 				}
 
@@ -308,7 +308,7 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 					break LOOP
 				}
 			}
-			fmt.Printf("GOROUTINE 1 completed in function Recv\n")
+			sc.Logger.Log("GOROUTINE 1 completed in function Recv\n")
 			utils.GoroutineEnded(goroutineName)
 		})
 
