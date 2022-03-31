@@ -267,7 +267,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 					break LOOP
 				}
 			}
-			sc.Logger.Log("GOROUTINE 2 completed in function ProcessSubMsgs\n")
+			fmt.Printf("GOROUTINE 2 completed in function ProcessSubMsgs\n")
 			utils.GoroutineEnded(goroutineName)
 		})
 
@@ -308,7 +308,7 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 					break LOOP
 				}
 			}
-			sc.Logger.Log("GOROUTINE 1 completed in function Recv\n")
+			fmt.Printf("GOROUTINE 1 completed in function Recv\n")
 			utils.GoroutineEnded(goroutineName)
 		})
 

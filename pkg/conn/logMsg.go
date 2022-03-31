@@ -3,7 +3,6 @@ package conn
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/samirgadkari/sidecar/pkg/log"
 	"github.com/samirgadkari/sidecar/pkg/utils"
@@ -75,10 +74,8 @@ func processLogMsg(logs *Logs, l *pb.LogMsg) {
 
 	err = logs.natsConn.Publish("search.log.v1", []byte(l.String()))
 	if err != nil {
-		fmt.Printf("Error publishing to NATS server: %v\n", err)
-		os.Exit(-1)
+		logs.logger.Log("Error publishing to NATS server: %v\n", err)
 	}
-	fmt.Printf("Server sent message\n")
 }
 
 func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
