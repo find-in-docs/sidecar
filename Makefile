@@ -28,7 +28,7 @@ ${EXEDIR}:
 	mkdir ${EXEDIR}
 
 build: | ${EXEDIR}
-	go build -o ${BIN_NAME} cli/main.go
+	go build -o ${BIN_NAME} pkg/main/main.go
 
 run: build
 	./${BIN_NAME} serve
