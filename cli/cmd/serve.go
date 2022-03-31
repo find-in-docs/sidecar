@@ -43,6 +43,7 @@ The server will connect, and run some tests between two sidecar instances`,
 
 		fmt.Println("Press the Enter key to stop")
 		fmt.Scanln()
+		fmt.Println("User pressed Enter key")
 
 		// TODO: The grcp.GracefulStop() routine is blocking forever.
 		// This is probably because some RPC is not completed.

@@ -57,7 +57,7 @@ func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*emptypb.Empty, error)
 
 	s.Logs.ReceivedLogMsg(in)
 
-	return nil, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {
@@ -66,10 +66,12 @@ func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, er
 	s.Logs.logger.Log("Received SubMsg: %s\n", in)
 
 	m, err := s.Subs.Subscribe(in)
-	if err == nil {
-		m.Header.MsgId = NextMsgId()
-		s.Logs.logger.Log("Sending SubMsgRsp: %s\n", m)
+	if err != nil {
+		s.Logs.logger.Log("Error subscribing: %s\n", err.Error())
+		return nil, err
 	}
+	m.Header.MsgId = NextMsgId()
+	s.Logs.logger.Log("Sending SubMsgRsp: %s\n", m)
 
 	return m, err
 }
@@ -80,10 +82,12 @@ func (s *Server) Unsub(ctx context.Context, in *pb.UnsubMsg) (*pb.UnsubMsgRespon
 	s.Logs.logger.Log("Received UnsubMsg: %s\n", in)
 
 	m, err := s.Subs.Unsubscribe(s.Logs.logger, in)
-	if err == nil {
-		m.Header.MsgId = NextMsgId()
-		s.Logs.logger.Log("Sending UnsubMsgRsp: %s\n", m)
+	if err != nil {
+		s.Logs.logger.Log("Error unsubscribing: %s\n", err.Error())
+		return nil, err
 	}
+	m.Header.MsgId = NextMsgId()
+	s.Logs.logger.Log("Sending UnsubMsgRsp: %s\n", m)
 
 	return m, err
 }
@@ -95,10 +99,12 @@ func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse
 	s.Logs.logger.PrintMsg("Received from NATS: %s\n", in)
 
 	m, err := RecvFromNATS(ctx, s, in)
-	if err == nil {
-		m.Header.MsgId = NextMsgId()
-		s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
+	if err != nil {
+		s.Logs.logger.Log("Could not receive from NATS: %s\n", err.Error())
+		return nil, err
 	}
+	m.Header.MsgId = NextMsgId()
+	s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
 
 	return m, err
 }
@@ -116,7 +122,7 @@ func (s *Server) Pub(ctx context.Context, in *pb.PubMsg) (*pb.PubMsgResponse, er
 	}
 
 	m, err := s.Pubs.Publish(ctx, s.Logs.logger, in, retryBehavior)
-	if err == nil {
+	if err == nil { // different logic - checking if err == nil instead of != nil
 		s.Logs.logger.Log("Sending PubMsgResponse: %s\n", m)
 	}
 

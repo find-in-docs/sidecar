@@ -2,8 +2,9 @@ package conn
 
 import "sync"
 
-// This value is used in other places than just within the server context.
-// This means we have to keep it as a global.
+// GRPC creates a different goroutine to handle each request.
+// This value is used by many goroutines.
+// This means we have to keep it as a global, and protect it using a mutex.
 type MsgID struct {
 	mu    sync.Mutex
 	Value uint64

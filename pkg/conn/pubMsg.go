@@ -86,7 +86,7 @@ func (pubs *Pubs) Publish(ctx context.Context, logger *log.Logger, in *pb.PubMsg
 
 	if err != nil {
 
-		logger.Log("Error publishing msg: %s\n\tto topic: %s\n\tresponse topic: %s\n\terr: $s",
+		logger.Log("Error publishing msg: %s\n\tto topic: %s\n\tresponse topic: %s\n\terr: %s",
 			in, topic, responseTopic, err.Error())
 		return &pb.PubMsgResponse{
 			Header: &header,
