@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/samirgadkari/sidecar/pkg/utils"
@@ -23,26 +22,10 @@ type SC struct {
 func InitSidecar(serviceName string, regParams *pb.RegistrationParams) (*SC, error) {
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
-	_, sidecar, err := Connect(serviceName, sidecarServiceAddr, regParams)
+	conn, err := Connect(serviceName, sidecarServiceAddr, regParams)
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to client: %w\n", err)
 	}
-
-	return sidecar, nil
-}
-
-func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationParams) (*grpc.ClientConn, *SC, error) {
-
-	// var opts []grpc.DialOption
-
-	fmt.Printf("serverAddr: %s\n", serverAddr)
-	conn, err := grpc.Dial(serverAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, fmt.Errorf("Error creating GRPC channel: %w\n", err)
-	}
-
-	fmt.Printf("conn: %v\n", conn)
 
 	client := pb.NewSidecarClient(conn)
 	fmt.Printf("GRPC connection to sidecar created\n")
@@ -58,10 +41,26 @@ func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationPa
 	sc := &SC{client, header, logger}
 	err = sc.Register(serviceName, regParams)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error registering client: %w\n", err)
+		sc.Logger.Log("Error registering client: %s", err.Error())
+		return nil, fmt.Errorf("Error registering client: %w\n", err)
 	}
 
-	return conn, sc, nil
+	return sc, nil
+}
+
+func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationParams) (*grpc.ClientConn, error) {
+
+	// var opts []grpc.DialOption
+
+	fmt.Printf("serverAddr: %s\n", serverAddr)
+	conn, err := grpc.Dial(serverAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("Error creating GRPC channel: %w", err)
+	}
+
+	fmt.Printf("conn: %v\n", conn)
+	return conn, nil
 }
 
 func DefaultRegParams(sc *SC) (*pb.RegistrationParams, error) {
@@ -74,8 +73,7 @@ func DefaultRegParams(sc *SC) (*pb.RegistrationParams, error) {
 	//   https://pkg.go.dev/google.golang.org/protobuf/types/known/durationpb
 	debounceDelayDuration, err := time.ParseDuration("5s")
 	if err != nil {
-		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("Error creating Golang time duration: %w\n", err)
 	}
 	debounceDelay := durationpb.New(debounceDelayDuration)
 
@@ -83,8 +81,7 @@ func DefaultRegParams(sc *SC) (*pb.RegistrationParams, error) {
 
 	retryDelayDuration, err := time.ParseDuration("2s")
 	if err != nil {
-		sc.Logger.Log("Error creating Golang time duration.\nerr: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("Error creating Golang time duration: %w\n", err)
 	}
 	retryDelay := durationpb.New(retryDelayDuration)
 
@@ -110,8 +107,7 @@ func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) err
 
 		rParams, err = DefaultRegParams(sc)
 		if err != nil {
-			fmt.Printf("Error creating default registration params\n\terr: %v\n", err)
-			os.Exit(-1)
+			return fmt.Errorf("Error creating default registration params: %s", err.Error())
 		}
 	}
 
@@ -129,7 +125,7 @@ func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) err
 	rRsp, err := sc.client.Register(context.Background(), rMsg)
 	sc.Logger.Log("Registration msg sent:\n\t%s\n", rMsg)
 	if err != nil {
-		sc.Logger.Log("Sending Registration caused error:\n\terr: %v\n", err)
+		sc.Logger.Log("Sending Registration caused error: %v\n", err)
 		return err
 	}
 
@@ -156,14 +152,14 @@ func (sc *SC) Pub(ctx context.Context, topic string, data []byte, rb *pb.RetryBe
 	pubRsp, err := sc.client.Pub(ctx, &pubMsg)
 	sc.Logger.Log("Pub message sent: %s\n", pubMsg.String())
 	if err != nil {
-		sc.Logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %s\n\terr: %v\n",
+		sc.Logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %s %v\n",
 			topic, string(data), err)
 		return err
 	}
 	sc.Logger.Log("Pub rsp received: %s\n", pubRsp)
 
 	if pubRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Logger.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %s\n\terr: %v\n",
+		sc.Logger.Log("Error received while publishing to topic:\n\ttopic: %s\n\tmsg: %s %v\n",
 			topic, data, err)
 		return err
 	}
@@ -186,14 +182,14 @@ func (sc *SC) Sub(ctx context.Context, topic string, chanSize uint32) error {
 	subRsp, err := sc.client.Sub(ctx, &subMsg)
 	sc.Logger.Log("Sub message sent:\n\t%s\n", &subMsg)
 	if err != nil {
-		sc.Logger.Log("Could not subscribe to topic: %s\n\terr: %v\n",
+		sc.Logger.Log("Could not subscribe to topic: %s %v\n",
 			topic, err)
 		return err
 	}
 	sc.Logger.Log("Sub rsp received:\n\t%s\n", subRsp)
 
 	if subRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Logger.Log("Error received while publishing to topic:\n\ttopic: %s\n\terr: %v\n",
+		sc.Logger.Log("Error received while publishing to topic:\n\ttopic: %s %v\n",
 			topic, err)
 		return err
 	}
@@ -215,12 +211,12 @@ func (sc *SC) Unsub(ctx context.Context, topic string) error {
 	unsubRsp, err := sc.client.Unsub(ctx, &unsubMsg)
 	sc.Logger.Log("Unsub message sent:\n\t%s\n", &unsubMsg)
 	if err != nil {
-		sc.Logger.Log("Could not unsubscribe from topic:\n\ttopic: %s\n\terr: %v\n", topic, err)
+		sc.Logger.Log("Could not unsubscribe from topic:\n\ttopic: %s %v\n", topic, err)
 		return err
 	}
 
 	if unsubRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Logger.Log("Error received while unsubscribing to topic:\n\ttopic: %s\n\terr: %v", topic, err)
+		sc.Logger.Log("Error received while unsubscribing to topic:\n\ttopic: %s %v", topic, err)
 		return err
 	}
 

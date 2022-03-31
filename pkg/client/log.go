@@ -25,10 +25,10 @@ func NewLogger(client *pb.SidecarClient, header *pb.Header) *Logger {
 func (l *Logger) Log(s string, args ...interface{}) {
 
 	str := fmt.Sprintf(s, args...)
-	l.LogString(&str)
+	l.logString(&str)
 }
 
-func (l *Logger) LogString(msg *string) {
+func (l *Logger) logString(msg *string) {
 
 	// Print message to stdout
 	fmt.Println(*msg)
