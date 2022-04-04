@@ -14,10 +14,10 @@ BIN_NAME=${EXEDIR}/${EXENAME}
 all: clean | run
 
 init:
+	- rm go.mod
+	- rm go.sum
 	go mod init github.com/samirgadkari/sidecar
-	mkdir cli
-	cd cli && cobra init
-	cd cli && cobra add serve
+	go mod tidy -compat=1.17
 
 genstubs:
 	protoc --go_out=. --go_opt=paths=source_relative \
@@ -42,4 +42,4 @@ clean:
 	go clean
 	rm ${BIN_NAME}
 	go clean -cache -modcache -i -r
-	go mod tidy
+	go mod tidy -compat=1.17
