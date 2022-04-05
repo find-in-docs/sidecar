@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/samirgadkari/sidecar/pkg/utils"
@@ -239,7 +240,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	responseCh := sc.Recv(ctx, topic)
 
 	goroutineName := "ProcessSubMsgs"
-	utils.StartGoroutine(goroutineName,
+	err = utils.StartGoroutine(goroutineName,
 		func() {
 			subscribedTopic := topic
 
@@ -271,6 +272,11 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 			utils.GoroutineEnded(goroutineName)
 		})
 
+	if err != nil {
+		fmt.Printf("Error starting goroutine: %v\n", err)
+		os.Exit(-1)
+	}
+
 	return nil
 }
 
@@ -287,7 +293,7 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 	responseCh := make(chan *Response)
 
 	goroutineName := "Recv"
-	utils.StartGoroutine(goroutineName,
+	err := utils.StartGoroutine(goroutineName,
 		func() {
 		LOOP:
 			for {
@@ -311,6 +317,11 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 			fmt.Printf("GOROUTINE 1 completed in function Recv\n")
 			utils.GoroutineEnded(goroutineName)
 		})
+
+	if err != nil {
+		fmt.Printf("Error starting goroutine: %v\n", err)
+		os.Exit(-1)
+	}
 
 	return responseCh
 }

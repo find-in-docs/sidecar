@@ -3,6 +3,7 @@ package conn
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/samirgadkari/sidecar/pkg/log"
 	"github.com/samirgadkari/sidecar/pkg/utils"
@@ -67,7 +68,7 @@ func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
 	var l *pb.LogMsg
 
 	goroutineName := "SendLogsToMsgQueue"
-	utils.StartGoroutine(goroutineName,
+	err := utils.StartGoroutine(goroutineName,
 		func() {
 		LOOP:
 			for {
@@ -88,4 +89,9 @@ func SendLogsToMsgQueue(ctx context.Context, logs *Logs) {
 			fmt.Printf("GOROUTINE 4 completed in function SendLogsToMsgQueue\n")
 			utils.GoroutineEnded(goroutineName)
 		})
+
+	if err != nil {
+		fmt.Printf("Error starting goroutine: %v\n", err)
+		os.Exit(-1)
+	}
 }

@@ -25,7 +25,7 @@ func InitNATSconn() (*Conn, error) {
 func InitGRPCconn(srv *Server) {
 
 	goroutineName := "InitGRCPconn"
-	utils.StartGoroutine(goroutineName, func() {
+	err := utils.StartGoroutine(goroutineName, func() {
 		s := grpc.NewServer()
 
 		sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
@@ -47,6 +47,11 @@ func InitGRPCconn(srv *Server) {
 		fmt.Printf("GOROUTINE 3 for GRCP server completed\n\n")
 		utils.GoroutineEnded(goroutineName)
 	})
+
+	if err != nil {
+		fmt.Printf("Error starting goroutine: %v\n", err)
+		os.Exit(-1)
+	}
 }
 
 func Initconns() (*Conn, *Server, error) {
