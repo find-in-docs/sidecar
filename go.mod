@@ -1,4 +1,4 @@
-module github.com/samirgadkari/sidecar
+module github.com/find-in-docs/sidecar
 
 go 1.17
 
