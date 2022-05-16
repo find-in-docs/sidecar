@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/samirgadkari/sidecar/pkg/config"
-	"github.com/samirgadkari/sidecar/pkg/conn"
-	"github.com/samirgadkari/sidecar/pkg/utils"
+	"github.com/find-in-docs/sidecar/pkg/config"
+	"github.com/find-in-docs/sidecar/pkg/conn"
+	"github.com/find-in-docs/sidecar/pkg/utils"
 )
 
 const (

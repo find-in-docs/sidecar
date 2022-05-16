@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 )
 
 type Logger struct {

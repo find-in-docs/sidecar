@@ -5,8 +5,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/samirgadkari/sidecar/pkg/utils"
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	"github.com/find-in-docs/sidecar/pkg/utils"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )

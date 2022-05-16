@@ -3,7 +3,7 @@ package conn
 import (
 	"context"
 
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

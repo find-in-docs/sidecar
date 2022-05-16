@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

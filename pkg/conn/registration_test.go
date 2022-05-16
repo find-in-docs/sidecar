@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samirgadkari/sidecar/pkg/client"
-	"github.com/samirgadkari/sidecar/pkg/config"
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	"github.com/find-in-docs/sidecar/pkg/client"
+	"github.com/find-in-docs/sidecar/pkg/config"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

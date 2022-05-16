@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/samirgadkari/sidecar/pkg/log"
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	"github.com/find-in-docs/sidecar/pkg/log"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 )
 
 const (

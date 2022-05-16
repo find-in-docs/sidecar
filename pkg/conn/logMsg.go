@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/samirgadkari/sidecar/pkg/log"
-	"github.com/samirgadkari/sidecar/pkg/utils"
-	pb "github.com/samirgadkari/sidecar/protos/v1/messages"
+	"github.com/find-in-docs/sidecar/pkg/log"
+	"github.com/find-in-docs/sidecar/pkg/utils"
+	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 )
 
 const (

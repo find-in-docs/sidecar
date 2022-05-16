@@ -16,7 +16,7 @@ all: clean | run
 init:
 	- rm go.mod
 	- rm go.sum
-	go mod init github.com/samirgadkari/sidecar
+	go mod init github.com/find-in-docs/sidecar
 	go mod tidy -compat=1.17
 
 genstubs:
