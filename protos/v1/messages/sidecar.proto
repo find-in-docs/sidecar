@@ -147,8 +147,8 @@ service Sidecar {
 
 message Doc {
 
-	uint64 documentId = 1;
-	repeated uint64 wordInt = 2;
+	uint64 docId = 1;
+	repeated uint64 wordInts = 2;
 	string inputDocId = 3;
 	string userId = 4;
 	string businessId = 5;
