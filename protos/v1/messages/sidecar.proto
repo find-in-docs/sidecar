@@ -143,3 +143,19 @@ service Sidecar {
 	rpc Pub (PubMsg) returns (PubMsgResponse);
 	rpc Log (LogMsg) returns (google.protobuf.Empty);
 }
+
+message Doc {
+
+	uint64 DocId = 1;
+	repeated uint64 WordInts = 2;
+	string InputDocId = 3;
+	string UserId = 4;
+	string BusinessId = 5;
+	float Stars = 6;
+	uint32 Useful = 7;
+	uint32 Funny = 8;
+	uint32 Cool = 9;
+	string Text = 10;
+	string Date = 11;
+}
+
