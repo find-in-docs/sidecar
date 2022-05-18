@@ -161,6 +161,6 @@ message Doc {
 
 message Documents {
 
-	repeated Doc documents = 1;
+	repeated Doc docs = 1;
 }
 
