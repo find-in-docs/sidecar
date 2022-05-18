@@ -142,7 +142,6 @@ service Sidecar {
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);
 	rpc Log (LogMsg) returns (google.protobuf.Empty);
-	rpc Experiment (Doc) returns (google.protobuf.Empty);
 }
 
 message Doc {
@@ -158,5 +157,10 @@ message Doc {
 	uint32 cool = 9;
 	string text = 10;
 	string date = 11;
+}
+
+message Documents {
+
+	repeated Doc documents = 1;
 }
 

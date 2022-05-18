@@ -25,7 +25,6 @@ type SidecarClient interface {
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Experiment(ctx context.Context, in *Doc, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type sidecarClient struct {
@@ -90,15 +89,6 @@ func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) Experiment(ctx context.Context, in *Doc, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/messages.Sidecar/Experiment", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // SidecarServer is the server API for Sidecar service.
 // All implementations must embed UnimplementedSidecarServer
 // for forward compatibility
@@ -109,7 +99,6 @@ type SidecarServer interface {
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
 	Log(context.Context, *LogMsg) (*emptypb.Empty, error)
-	Experiment(context.Context, *Doc) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSidecarServer()
 }
 
@@ -134,9 +123,6 @@ func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse
 }
 func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
-}
-func (UnimplementedSidecarServer) Experiment(context.Context, *Doc) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Experiment not implemented")
 }
 func (UnimplementedSidecarServer) mustEmbedUnimplementedSidecarServer() {}
 
@@ -259,24 +245,6 @@ func _Sidecar_Log_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Sidecar_Experiment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Doc)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SidecarServer).Experiment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/messages.Sidecar/Experiment",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SidecarServer).Experiment(ctx, req.(*Doc))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Sidecar_ServiceDesc is the grpc.ServiceDesc for Sidecar service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -307,10 +275,6 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Log",
 			Handler:    _Sidecar_Log_Handler,
-		},
-		{
-			MethodName: "Experiment",
-			Handler:    _Sidecar_Experiment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
