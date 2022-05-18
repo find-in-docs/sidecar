@@ -142,6 +142,7 @@ service Sidecar {
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);
 	rpc Log (LogMsg) returns (google.protobuf.Empty);
+	rpc Experiment (Doc) returns (google.protobuf.Empty);
 }
 
 message Doc {
