@@ -91,6 +91,22 @@ message PubMsgResponse {
 	string msg = 3;
 }
 
+message PubJSMsg {
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
+	bytes msg = 4;
+	optional RetryBehavior Retry = 5;
+}
+
+message PubJSMsgResponse {
+
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
+	string workQueue = 4;
+}
+
 message SubMsg {
 	Header header = 1;
 	string topic = 2;
@@ -186,8 +202,11 @@ service Sidecar {
 	rpc Sub (SubMsg) returns (SubMsgResponse);
 	rpc SubJS (SubJSMsg) returns (SubJSMsgResponse);
 	rpc Recv (Receive) returns (SubTopicResponse);
+	rpc RecvJS (ReceiveJS) returns (SubJSTopicResponse);
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
+	rpc UnsubJS (UnsubJSMsg) returns (UnsubJSMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);
+	rpc PubJS (PubJSMsg) returns (PubJSMsgResponse);
 	rpc Log (LogMsg) returns (google.protobuf.Empty);
 }
 

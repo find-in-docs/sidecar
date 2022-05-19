@@ -232,11 +232,6 @@ type Response struct {
 func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	chanSize uint32, f func(*pb.SubTopicResponse)) error {
 
-	err := sc.Sub(ctx, topic, chanSize)
-	if err != nil {
-		return err
-	}
-
 	responseCh := sc.Recv(ctx, topic)
 
 	goroutineName := "ProcessSubMsgs"
@@ -275,6 +270,11 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	if err != nil {
 		fmt.Printf("Error starting goroutine: %v\n", err)
 		os.Exit(-1)
+	}
+
+	err := sc.Sub(ctx, topic, chanSize)
+	if err != nil {
+		return err
 	}
 
 	return nil

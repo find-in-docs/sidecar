@@ -23,8 +23,11 @@ type SidecarClient interface {
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
 	SubJS(ctx context.Context, in *SubJSMsg, opts ...grpc.CallOption) (*SubJSMsgResponse, error)
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
+	RecvJS(ctx context.Context, in *ReceiveJS, opts ...grpc.CallOption) (*SubJSTopicResponse, error)
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
+	UnsubJS(ctx context.Context, in *UnsubJSMsg, opts ...grpc.CallOption) (*UnsubJSMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
+	PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*PubJSMsgResponse, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -72,6 +75,15 @@ func (c *sidecarClient) Recv(ctx context.Context, in *Receive, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *sidecarClient) RecvJS(ctx context.Context, in *ReceiveJS, opts ...grpc.CallOption) (*SubJSTopicResponse, error) {
+	out := new(SubJSTopicResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/RecvJS", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sidecarClient) Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error) {
 	out := new(UnsubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Unsub", in, out, opts...)
@@ -81,9 +93,27 @@ func (c *sidecarClient) Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *sidecarClient) UnsubJS(ctx context.Context, in *UnsubJSMsg, opts ...grpc.CallOption) (*UnsubJSMsgResponse, error) {
+	out := new(UnsubJSMsgResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/UnsubJS", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error) {
 	out := new(PubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Pub", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sidecarClient) PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*PubJSMsgResponse, error) {
+	out := new(PubJSMsgResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/PubJS", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +137,11 @@ type SidecarServer interface {
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
 	SubJS(context.Context, *SubJSMsg) (*SubJSMsgResponse, error)
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
+	RecvJS(context.Context, *ReceiveJS) (*SubJSTopicResponse, error)
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
+	UnsubJS(context.Context, *UnsubJSMsg) (*UnsubJSMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
+	PubJS(context.Context, *PubJSMsg) (*PubJSMsgResponse, error)
 	Log(context.Context, *LogMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSidecarServer()
 }
@@ -129,11 +162,20 @@ func (UnimplementedSidecarServer) SubJS(context.Context, *SubJSMsg) (*SubJSMsgRe
 func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
 }
+func (UnimplementedSidecarServer) RecvJS(context.Context, *ReceiveJS) (*SubJSTopicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecvJS not implemented")
+}
 func (UnimplementedSidecarServer) Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Unsub not implemented")
 }
+func (UnimplementedSidecarServer) UnsubJS(context.Context, *UnsubJSMsg) (*UnsubJSMsgResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsubJS not implemented")
+}
 func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
+}
+func (UnimplementedSidecarServer) PubJS(context.Context, *PubJSMsg) (*PubJSMsgResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PubJS not implemented")
 }
 func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
@@ -223,6 +265,24 @@ func _Sidecar_Recv_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sidecar_RecvJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiveJS)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).RecvJS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/RecvJS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).RecvJS(ctx, req.(*ReceiveJS))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Sidecar_Unsub_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnsubMsg)
 	if err := dec(in); err != nil {
@@ -241,6 +301,24 @@ func _Sidecar_Unsub_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sidecar_UnsubJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubJSMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).UnsubJS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/UnsubJS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).UnsubJS(ctx, req.(*UnsubJSMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Sidecar_Pub_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PubMsg)
 	if err := dec(in); err != nil {
@@ -255,6 +333,24 @@ func _Sidecar_Pub_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SidecarServer).Pub(ctx, req.(*PubMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sidecar_PubJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PubJSMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).PubJS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/PubJS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).PubJS(ctx, req.(*PubJSMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -301,12 +397,24 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Sidecar_Recv_Handler,
 		},
 		{
+			MethodName: "RecvJS",
+			Handler:    _Sidecar_RecvJS_Handler,
+		},
+		{
 			MethodName: "Unsub",
 			Handler:    _Sidecar_Unsub_Handler,
 		},
 		{
+			MethodName: "UnsubJS",
+			Handler:    _Sidecar_UnsubJS_Handler,
+		},
+		{
 			MethodName: "Pub",
 			Handler:    _Sidecar_Pub_Handler,
+		},
+		{
+			MethodName: "PubJS",
+			Handler:    _Sidecar_PubJS_Handler,
 		},
 		{
 			MethodName: "Log",
