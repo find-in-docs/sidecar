@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SidecarClient interface {
 	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
+	SubJS(ctx context.Context, in *SubJSMsg, opts ...grpc.CallOption) (*SubJSMsgResponse, error)
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
@@ -47,6 +48,15 @@ func (c *sidecarClient) Register(ctx context.Context, in *RegistrationMsg, opts 
 func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error) {
 	out := new(SubMsgResponse)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/Sub", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sidecarClient) SubJS(ctx context.Context, in *SubJSMsg, opts ...grpc.CallOption) (*SubJSMsgResponse, error) {
+	out := new(SubJSMsgResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/SubJS", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +105,7 @@ func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOp
 type SidecarServer interface {
 	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
+	SubJS(context.Context, *SubJSMsg) (*SubJSMsgResponse, error)
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
@@ -111,6 +122,9 @@ func (UnimplementedSidecarServer) Register(context.Context, *RegistrationMsg) (*
 }
 func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sub not implemented")
+}
+func (UnimplementedSidecarServer) SubJS(context.Context, *SubJSMsg) (*SubJSMsgResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubJS not implemented")
 }
 func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
@@ -169,6 +183,24 @@ func _Sidecar_Sub_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SidecarServer).Sub(ctx, req.(*SubMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sidecar_SubJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubJSMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).SubJS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/SubJS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).SubJS(ctx, req.(*SubJSMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -259,6 +291,10 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Sub",
 			Handler:    _Sidecar_Sub_Handler,
+		},
+		{
+			MethodName: "SubJS",
+			Handler:    _Sidecar_SubJS_Handler,
 		},
 		{
 			MethodName: "Recv",

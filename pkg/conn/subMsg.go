@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nats-io/nats.go"
 	"github.com/find-in-docs/sidecar/pkg/log"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
+	"github.com/nats-io/nats.go"
 )
 
 const (
@@ -14,11 +14,13 @@ const (
 )
 
 type Subs struct {
-	natsMsgs      map[string]chan *nats.Msg
-	subscriptions map[string]*nats.Subscription
-	msgId         uint32
-	natsConn      *Conn
-	header        *pb.Header
+	natsMsgs        map[string]chan *nats.Msg
+	natsJSMsgs      map[string]chan *nats.Msg
+	subscriptions   map[string]*nats.Subscription
+	subscriptionsJS map[string]*nats.Subscription
+	msgId           uint32
+	natsConn        *Conn
+	header          *pb.Header
 }
 
 func InitSubs(natsConn *Conn, srv *Server) {
@@ -70,6 +72,41 @@ func (subs *Subs) Subscribe(in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 	return subMsgRsp, nil
 }
 
+func (subs *Subs) SubscribeJS(in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
+
+	topic := in.GetTopic()
+	workQueue := in.GetWorkQueue()
+	chanSize := in.GetChanSize()
+
+	topicMsgs := make(chan *nats.Msg, chanSize)
+	subs.natsJSMsgs[topic] = topicMsgs
+
+	subscription, err := subs.natsConn.js.PullSubscribe(topic, workQueue,
+		nats.PullMaxWaiting(128))
+	if err != nil {
+		return nil, err
+	}
+	subs.subscriptionsJS[topic] = subscription
+
+	subJSMsgRsp := &pb.SubJSMsgResponse{
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
+			SrcServType: "sidecar",
+			DstServType: in.Header.SrcServType,
+			ServId:      serviceId()(),
+			MsgId:       NextMsgId(),
+		},
+
+		RspHeader: &pb.ResponseHeader{
+			Status: uint32(pb.Status_OK),
+		},
+
+		Msg: "OK",
+	}
+
+	return subJSMsgRsp, nil
+}
+
 func RecvFromNATS(ctx context.Context, srv *Server, in *pb.Receive) (*pb.SubTopicResponse, error) {
 
 	natsMsgs, ok := srv.Subs.natsMsgs[in.Topic]
@@ -103,6 +140,44 @@ func RecvFromNATS(ctx context.Context, srv *Server, in *pb.Receive) (*pb.SubTopi
 		}
 
 		return subTopicRsp, nil
+
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func RecvJSFromNATS(ctx context.Context, srv *Server, in *pb.ReceiveJS) (*pb.SubJSTopicResponse, error) {
+
+	natsJSMsgs, ok := srv.Subs.natsJSMsgs[in.Topic]
+	if !ok {
+		return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
+	}
+
+	select {
+
+	case m := <-natsJSMsgs:
+		if m == nil {
+			return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
+		}
+
+		s := fmt.Sprintf("Header:%s\n\tTopic: %s\n\tWorkQueue: %s\n",
+			in.Header, in.Topic, in.WorkQueue)
+		srv.Logs.logger.PrintMsg("Got msg from NATS server: %s\n", s)
+
+		subJSTopicRsp := &pb.SubJSTopicResponse{
+			Header: &pb.Header{
+				MsgType:     pb.MsgType_MSG_TYPE_SUB_JS_TOPIC_RSP,
+				SrcServType: serviceType(),
+				DstServType: in.Header.SrcServType,
+				ServId:      serviceId()(),
+				MsgId:       NextMsgId(),
+			},
+
+			Topic: m.Subject,
+			Msg:   m.Data,
+		}
+
+		return subJSTopicRsp, nil
 
 	case <-ctx.Done():
 		return nil, ctx.Err()

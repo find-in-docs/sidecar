@@ -3,31 +3,48 @@ package conn
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/nats-io/nats.go"
 )
 
 type Conn struct {
 	nc  *nats.Conn
+	js  nats.JetStreamContext
 	Url string
 }
 
 func NewNATSConn(url string) (*Conn, error) {
 
-	nc, err := nats.Connect(url) /* nats.RetryOnFailedConnect(true),
-	nats.MaxReconnects(10),
-	nats.ReconnectWait(time.Second),
-	nats.ReconnectHandler(func(_ *nats.Conn) {
-		fmt.Printf("Reconnecting to NATS server ...\n")
-	}) */
+	nc, err := nats.Connect(url, nats.RetryOnFailedConnect(true),
+		nats.MaxReconnects(10),
+		nats.ReconnectWait(3*time.Second),
+		nats.ReconnectHandler(func(_ *nats.Conn) {
+			fmt.Printf("Reconnecting to NATS server ...\n")
+		}))
 
 	if err != nil {
-		fmt.Printf("Error connecting to NATS server.\n\terr: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("Error connecting to NATS server. err: %w", err)
 	}
 
-	c := Conn{nc, url}
+	js, err := nc.JetStream(nats.PublishAsyncMaxPending(256))
+	if err != nil {
+		return nil, fmt.Errorf("Error setting PublishAsyncMaxPending on Jetstream: %w\n",
+			err)
+	}
+
+	c := Conn{nc, js, url}
 	return &c, nil
+}
+
+func (c *Conn) SubscribeJS(t string, group string) (*nats.Subscription, error) {
+
+	s, err := c.js.PullSubscribe(t, group, nats.PullMaxWaiting(128))
+	if err != nil {
+		return nil, fmt.Errorf("Error creating pull subscriber: %w", err)
+	}
+
+	return s, nil
 }
 
 func (c *Conn) Subscribe(t string, f func(*nats.Msg)) (*nats.Subscription, error) {

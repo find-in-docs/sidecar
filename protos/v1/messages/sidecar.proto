@@ -13,11 +13,18 @@ enum MsgType {
 	MSG_TYPE_LOG_RSP = 3;
 	MSG_TYPE_PUB = 4;
 	MSG_TYPE_PUB_RSP = 5;
-	MSG_TYPE_SUB = 6;
-	MSG_TYPE_SUB_RSP = 7;
-	MSG_TYPE_SUB_TOPIC_RSP = 8;
-	MSG_TYPE_UNSUB = 9;
-	MSG_TYPE_UNSUB_RSP = 10;
+	MSG_TYPE_PUB_JS = 6;
+	MSG_TYPE_PUB_JS_RSP = 7;
+	MSG_TYPE_SUB = 8;
+	MSG_TYPE_SUB_RSP = 9;
+	MSG_TYPE_SUB_JS = 10;
+	MSG_TYPE_SUB_JS_RSP = 11;
+	MSG_TYPE_SUB_TOPIC_RSP = 12;
+	MSG_TYPE_SUB_JS_TOPIC_RSP = 13;
+	MSG_TYPE_UNSUB = 14;
+	MSG_TYPE_UNSUB_RSP = 15;
+	MSG_TYPE_UNSUB_JS = 16;
+	MSG_TYPE_UNSUB_JS_RSP = 17;
 }
 
 message Header {
@@ -97,6 +104,19 @@ message SubMsgResponse {
 	string msg = 3;
 }
 
+message SubJSMsg {
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
+	uint32 chanSize = 4;
+}
+
+message SubJSMsgResponse {
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
+}
+
 message UnsubMsg {
 	Header header = 1;
 	string topic = 2;
@@ -109,9 +129,27 @@ message UnsubMsgResponse {
 	string msg = 3;
 }
 
+message UnsubJSMsg {
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
+}
+
+message UnsubJSMsgResponse {
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string msg = 3;
+}
+
 message Receive {
 	Header header = 1;
 	string topic = 2;
+}
+
+message ReceiveJS {
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
 }
 
 // Change this to SubTopicMsg. This is the message coming from NATS server
@@ -121,6 +159,14 @@ message SubTopicResponse {
 	Header header = 1;
 	string topic = 2;
 	bytes msg = 3;
+}
+
+message SubJSTopicResponse {
+
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
+	bytes msg = 4;
 }
 
 message LogMsg {
@@ -138,6 +184,7 @@ message LogMsgResponse {
 service Sidecar {
 	rpc Register (RegistrationMsg) returns (RegistrationMsgResponse);
 	rpc Sub (SubMsg) returns (SubMsgResponse);
+	rpc SubJS (SubJSMsg) returns (SubJSMsgResponse);
 	rpc Recv (Receive) returns (SubTopicResponse);
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);

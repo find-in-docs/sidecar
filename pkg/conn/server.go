@@ -60,6 +60,11 @@ func (s *Server) Log(ctx context.Context, in *pb.LogMsg) (*emptypb.Empty, error)
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) SubJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
+
+	return nil, nil
+}
+
 func (s *Server) Sub(ctx context.Context, in *pb.SubMsg) (*pb.SubMsgResponse, error) {
 
 	in.Header.MsgId = NextMsgId()
@@ -99,6 +104,23 @@ func (s *Server) Recv(ctx context.Context, in *pb.Receive) (*pb.SubTopicResponse
 	s.Logs.logger.PrintMsg("Received from NATS: %s\n", in)
 
 	m, err := RecvFromNATS(ctx, s, in)
+	if err != nil {
+		s.Logs.logger.Log("Could not receive from NATS: %s\n", err.Error())
+		return nil, err
+	}
+	m.Header.MsgId = NextMsgId()
+	s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
+
+	return m, err
+}
+
+func (s *Server) RecvJS(ctx context.Context, in *pb.ReceiveJS) (*pb.SubJSTopicResponse, error) {
+
+	in.Header.MsgId = NextMsgId()
+	// Do not log message to NATS. This creates a loop.
+	s.Logs.logger.PrintMsg("Received from NATS: %s\n", in)
+
+	m, err := RecvJSFromNATS(ctx, s, in)
 	if err != nil {
 		s.Logs.logger.Log("Could not receive from NATS: %s\n", err.Error())
 		return nil, err
