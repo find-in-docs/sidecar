@@ -2,8 +2,10 @@ package conn
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (s *Server) SubJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
@@ -53,4 +55,18 @@ func (s *Server) RecvJS(ctx context.Context, in *pb.ReceiveJS) (*pb.SubJSTopicRe
 	s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
 
 	return m, err
+}
+
+func (s *Server) PubJS(ctx context.Context, in *pb.PubJSMsg) (*emptypb.Empty, error) {
+
+	in.Header.MsgId = NextMsgId()
+	s.Logs.logger.Log("Received PubMsg: %s\n", in)
+
+	future, err := s.Pubs.natsConn.js.PublishAsync(in.Topic, in.Msg)
+	if err != nil {
+		return &emptypb.Empty{}, fmt.Errorf("Error publishing to JetStream with topic: %s\n", in.Topic)
+	}
+	s.Logs.logger.Log("Published to JetStream - future returned: %v\n", future)
+
+	return &emptypb.Empty{}, err
 }

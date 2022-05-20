@@ -9,8 +9,7 @@ import (
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 )
 
-func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string,
-	data []byte, rb *pb.RetryBehavior) error {
+func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string, data []byte) error {
 
 	header := sc.header
 	header.MsgType = pb.MsgType_MSG_TYPE_PUB_JS

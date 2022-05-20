@@ -27,7 +27,7 @@ type SidecarClient interface {
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
 	UnsubJS(ctx context.Context, in *UnsubJSMsg, opts ...grpc.CallOption) (*UnsubJSMsgResponse, error)
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
-	PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*PubJSMsgResponse, error)
+	PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -111,8 +111,8 @@ func (c *sidecarClient) Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*PubJSMsgResponse, error) {
-	out := new(PubJSMsgResponse)
+func (c *sidecarClient) PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/messages.Sidecar/PubJS", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ type SidecarServer interface {
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
 	UnsubJS(context.Context, *UnsubJSMsg) (*UnsubJSMsgResponse, error)
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
-	PubJS(context.Context, *PubJSMsg) (*PubJSMsgResponse, error)
+	PubJS(context.Context, *PubJSMsg) (*emptypb.Empty, error)
 	Log(context.Context, *LogMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSidecarServer()
 }
@@ -174,7 +174,7 @@ func (UnimplementedSidecarServer) UnsubJS(context.Context, *UnsubJSMsg) (*UnsubJ
 func (UnimplementedSidecarServer) Pub(context.Context, *PubMsg) (*PubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
 }
-func (UnimplementedSidecarServer) PubJS(context.Context, *PubJSMsg) (*PubJSMsgResponse, error) {
+func (UnimplementedSidecarServer) PubJS(context.Context, *PubJSMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PubJS not implemented")
 }
 func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*emptypb.Empty, error) {

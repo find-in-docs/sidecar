@@ -1,0 +1,40 @@
+package conn
+
+import (
+	"fmt"
+
+	"github.com/nats-io/nats.go"
+)
+
+func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
+
+	js, err := nc.JetStream(nats.PublishAsyncMaxPending(256))
+	if err != nil {
+		return nil, fmt.Errorf("Error creating JetStream: %w", err)
+	}
+
+	js.AddStream(&nats.StreamConfig{
+		Name:     "pullBasedSubscriberStream",
+		Subjects: []string{"search.doc.import.v1"},
+	})
+
+	return js, nil
+}
+
+func (c *Conn) SubscribeJS(topic string, group string) (*nats.Subscription, error) {
+
+	s, err := c.js.PullSubscribe(topic, group, nats.PullMaxWaiting(128))
+	if err != nil {
+		return nil, fmt.Errorf("Error creating pull subscriber: %w", err)
+	}
+
+	return s, nil
+}
+
+func (c *Conn) PublishJS(topic string, data []byte) error {
+
+	ret1, ret2 := c.js.Publish(topic, data)
+	fmt.Printf("ret1 type: %T ret2 type: %T\n", ret1, ret2)
+
+	return nil
+}

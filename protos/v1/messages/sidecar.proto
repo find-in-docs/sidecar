@@ -206,7 +206,7 @@ service Sidecar {
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
 	rpc UnsubJS (UnsubJSMsg) returns (UnsubJSMsgResponse);
 	rpc Pub (PubMsg) returns (PubMsgResponse);
-	rpc PubJS (PubJSMsg) returns (PubJSMsgResponse);
+	rpc PubJS (PubJSMsg) returns (google.protobuf.Empty);
 	rpc Log (LogMsg) returns (google.protobuf.Empty);
 }
 

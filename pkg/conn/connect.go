@@ -27,24 +27,15 @@ func NewNATSConn(url string) (*Conn, error) {
 		return nil, fmt.Errorf("Error connecting to NATS server. err: %w", err)
 	}
 
-	js, err := nc.JetStream(nats.PublishAsyncMaxPending(256))
+	c := Conn{nc, nil, url}
+
+	c.js, err = NewNATSConnJS(nc)
 	if err != nil {
 		return nil, fmt.Errorf("Error setting PublishAsyncMaxPending on Jetstream: %w\n",
 			err)
 	}
 
-	c := Conn{nc, js, url}
 	return &c, nil
-}
-
-func (c *Conn) SubscribeJS(t string, group string) (*nats.Subscription, error) {
-
-	s, err := c.js.PullSubscribe(t, group, nats.PullMaxWaiting(128))
-	if err != nil {
-		return nil, fmt.Errorf("Error creating pull subscriber: %w", err)
-	}
-
-	return s, nil
 }
 
 func (c *Conn) Subscribe(t string, f func(*nats.Msg)) (*nats.Subscription, error) {
