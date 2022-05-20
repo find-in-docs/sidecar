@@ -56,7 +56,7 @@ func (sc *SC) SubJS(ctx context.Context, topic string, workQueue string, chanSiz
 	sc.Logger.Log("SubJS rsp received:\n\t%s\n", subJSRsp)
 
 	if subJSRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Logger.Log("Error received while publishing to topic:\n\ttopic: %s workQueue: %s %v\n",
+		sc.Logger.Log("Error: received while publishing to topic:\n\ttopic: %s workQueue: %s %v\n",
 			topic, workQueue, err)
 		return err
 	}
