@@ -235,6 +235,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	responseCh := sc.Recv(ctx, topic)
 
 	goroutineName := "ProcessSubMsgs"
+	var err Error
 	err = utils.StartGoroutine(goroutineName,
 		func() {
 			subscribedTopic := topic

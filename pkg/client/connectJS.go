@@ -20,7 +20,6 @@ func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string, data []
 		Topic:     topic,
 		WorkQueue: workQueue,
 		Msg:       data,
-		Retry:     rb,
 	}
 
 	_, err := sc.client.PubJS(ctx, &pubJSMsg)
@@ -105,6 +104,7 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 	responseCh := sc.RecvJS(ctx, topic, workQueue)
 
 	goroutineName := "ProcessSubJSMsgs"
+	var err Error
 	err = utils.StartGoroutine(goroutineName,
 		func() {
 			subscribedTopic := topic
