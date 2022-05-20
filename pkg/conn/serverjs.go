@@ -11,7 +11,7 @@ func (s *Server) SubJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgRespon
 	in.Header.MsgId = NextMsgId()
 	s.Logs.logger.Log("Received SubJSMsg: %s\n", in)
 
-	m, err := s.Subs.SubscribeJS(in)
+	m, err := s.Subs.SubscribeJS(ctx, in)
 	if err != nil {
 		s.Logs.logger.Log("Error subscribing: %s\n", err.Error())
 		return nil, err

@@ -107,10 +107,10 @@ type ResponseJS struct {
 	err      error
 }
 
-func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic string,
+func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 	chanSize uint32, f func(*pb.SubJSTopicResponse)) error {
 
-	responseCh := sc.RecvJS(ctx, topic)
+	responseCh := sc.RecvJS(ctx, topic, workQueue)
 
 	goroutineName := "ProcessSubJSMsgs"
 	err = utils.StartGoroutine(goroutineName,
@@ -136,7 +136,8 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic string,
 					_ = sc.Unsub(ctx, subscribedTopic)
 
 					if ctx.Err() != nil {
-						sc.Logger.Log("Done channel signaled: %v\n", err)
+						sc.Logger.Log("Done channel signaled: %v\n",
+							ctx.Err())
 					}
 					break LOOP
 				}

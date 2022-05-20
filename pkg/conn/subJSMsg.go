@@ -5,11 +5,21 @@ import (
 	"fmt"
 
 	"github.com/find-in-docs/sidecar/pkg/log"
+	"github.com/find-in-docs/sidecar/pkg/utils"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"github.com/nats-io/nats.go"
 )
 
-func (subs *Subs) SubscribeJS(in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
+func unsubscribeJS(subs *Subs, topic string) {
+	subs.subscriptionsJS[topic].Drain()
+	subs.subscriptionsJS[topic].Unsubscribe()
+	delete(subs.subscriptionsJS, topic)
+
+	close(subs.natsJSMsgs[topic])
+	delete(subs.natsJSMsgs, topic)
+}
+
+func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
 
 	topic := in.GetTopic()
 	workQueue := in.GetWorkQueue()
@@ -19,15 +29,57 @@ func (subs *Subs) SubscribeJS(in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
 	subs.natsJSMsgs[topic] = topicMsgs
 
 	subscription, err := subs.natsConn.js.PullSubscribe(topic, workQueue,
-		nats.PullMaxWaiting(128))
+		nats.PullMaxWaiting(128), nats.Durable(workQueue))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not subscribe: topic: %s workQueue: %s: %w", err)
 	}
+
+	// Fetch messages in batches here
+	goroutineName := "GetSubJSMsgs"
+	err = utils.StartGoroutine(goroutineName,
+		func() {
+		LOOP:
+			for {
+				select {
+				case <-ctx.Done():
+
+					unsubscribeJS(subs, topic)
+
+					if ctx.Err() != nil {
+						fmt.Printf("Done channel signaled: err: %v\n",
+							ctx.Err())
+					}
+					break LOOP
+				default:
+				}
+
+				// Why is the Context() function not found?
+				// ms, err := subscription.Fetch(10, subs.natsConn.nc.Context(ctx))
+				ms, err := subscription.Fetch(10)
+				if err != nil {
+					fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
+						topic, err)
+					break
+				}
+
+				for _, m := range ms {
+					m.Ack()
+					subs.natsJSMsgs[topic] <- m
+				}
+			}
+			fmt.Printf("GOROUTINE %s completed\n", goroutineName)
+			utils.GoroutineEnded(goroutineName)
+		})
+
+	if err != nil {
+		return nil, fmt.Errorf("Error starting goroutine: %w", err)
+	}
+
 	subs.subscriptionsJS[topic] = subscription
 
 	subJSMsgRsp := &pb.SubJSMsgResponse{
 		Header: &pb.Header{
-			MsgType:     pb.MsgType_MSG_TYPE_SUB_RSP,
+			MsgType:     pb.MsgType_MSG_TYPE_SUB_JS_RSP,
 			SrcServType: "sidecar",
 			DstServType: in.Header.SrcServType,
 			ServId:      serviceId()(),
@@ -92,12 +144,7 @@ func (subs *Subs) UnsubscribeJS(logger *log.Logger, in *pb.UnsubJSMsg) (*pb.Unsu
 			topic, workQueue)
 	}
 
-	subs.subscriptionsJS[topic].Drain()
-	subs.subscriptionsJS[topic].Unsubscribe()
-	delete(subs.subscriptionsJS, topic)
-
-	close(subs.natsJSMsgs[topic])
-	delete(subs.natsJSMsgs, topic)
+	unsubscribeJS(subs, topic)
 
 	unsubJSMsgRsp := &pb.UnsubJSMsgResponse{
 		Header: &pb.Header{
