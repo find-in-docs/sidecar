@@ -104,7 +104,7 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 	responseCh := sc.RecvJS(ctx, topic, workQueue)
 
 	goroutineName := "ProcessSubJSMsgs"
-	var err Error
+	var err error
 	err = utils.StartGoroutine(goroutineName,
 		func() {
 			subscribedTopic := topic
@@ -143,7 +143,7 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 		os.Exit(-1)
 	}
 
-	err := sc.SubJS(ctx, topic, workQueue, chanSize)
+	err = sc.SubJS(ctx, topic, workQueue, chanSize)
 	if err != nil {
 		return err
 	}

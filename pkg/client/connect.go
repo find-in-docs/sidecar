@@ -235,7 +235,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 	responseCh := sc.Recv(ctx, topic)
 
 	goroutineName := "ProcessSubMsgs"
-	var err Error
+	var err error
 	err = utils.StartGoroutine(goroutineName,
 		func() {
 			subscribedTopic := topic
@@ -273,7 +273,7 @@ func (sc *SC) ProcessSubMsgs(ctx context.Context, topic string,
 		os.Exit(-1)
 	}
 
-	err := sc.Sub(ctx, topic, chanSize)
+	err = sc.Sub(ctx, topic, chanSize)
 	if err != nil {
 		return err
 	}
