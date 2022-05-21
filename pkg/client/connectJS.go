@@ -23,7 +23,7 @@ func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string, data []
 	}
 
 	_, err := sc.client.PubJS(ctx, &pubJSMsg)
-	sc.Logger.Log("Pub JS message sent: %s\n", pubJSMsg.String())
+	// sc.Logger.Log("Pub JS message sent: %s\n", pubJSMsg.String())
 	if err != nil {
 		sc.Logger.Log("Could not publish to topic: %s\n\tworkQueue: %s\n\tmessage:\n\tmsg: %s %v\n",
 			topic, workQueue, string(data), err)
