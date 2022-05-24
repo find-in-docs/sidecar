@@ -39,8 +39,6 @@ func main() {
 	// Using grcp.Stop() temporarily.
 	srv.GrcpServer.Stop()
 
-	cancel()
-
 	sleepDur, _ := time.ParseDuration("3s")
 	fmt.Printf("Sleeping for %s seconds\n", sleepDur)
 	time.Sleep(sleepDur)

@@ -26,14 +26,18 @@ type Subs struct {
 func InitSubs(natsConn *Conn, srv *Server) {
 
 	natsMsgs := make(map[string]chan *nats.Msg)
+	natsJSMsgs := make(map[string]chan *nats.Msg)
 	subscriptions := make(map[string]*nats.Subscription)
+	subscriptionsJS := make(map[string]*nats.Subscription)
 
 	srv.Subs = &Subs{
 
-		natsMsgs:      natsMsgs,
-		subscriptions: subscriptions,
-		msgId:         1,
-		natsConn:      natsConn,
+		natsMsgs:        natsMsgs,
+		natsJSMsgs:      natsJSMsgs,
+		subscriptions:   subscriptions,
+		subscriptionsJS: subscriptionsJS,
+		msgId:           1,
+		natsConn:        natsConn,
 	}
 }
 

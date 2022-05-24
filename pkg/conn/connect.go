@@ -19,8 +19,14 @@ func NewNATSConn(url string) (*Conn, error) {
 	nc, err := nats.Connect(url, nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(3*time.Second),
-		nats.ReconnectHandler(func(_ *nats.Conn) {
-			fmt.Printf("Reconnecting to NATS server ...\n")
+		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+			fmt.Printf("Got disconnected! Reason: %q\n", err)
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			fmt.Printf("Got reconnected to %v!\n", nc.ConnectedUrl())
+		}),
+		nats.ClosedHandler(func(nc *nats.Conn) {
+			fmt.Printf("Connection closed. Reason: %q\n", nc.LastError())
 		}))
 
 	if err != nil {

@@ -25,7 +25,7 @@ func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string, data []
 	_, err := sc.client.PubJS(ctx, &pubJSMsg)
 	// sc.Logger.Log("Pub JS message sent: %s\n", pubJSMsg.String())
 	if err != nil {
-		sc.Logger.Log("Could not publish to topic: %s\n\tworkQueue: %s\n\tmessage:\n\tmsg: %s %v\n",
+		sc.Logger.Log("Could not publish to topic: %s\n\tworkQueue: %s\n\tmessage: %s\n\tmsg: %s\n\terr: %v\n",
 			topic, workQueue, string(data), err)
 		return err
 	}
@@ -94,14 +94,18 @@ func (sc *SC) UnsubJS(ctx context.Context, topic string, workQueue string) error
 }
 
 type ResponseJS struct {
-	response *pb.SubJSTopicResponse
-	err      error
+	Response *pb.SubJSTopicResponse
+	Err      error
 }
 
+/*
 func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 	chanSize uint32, f func(*pb.SubJSTopicResponse)) error {
 
 	responseCh := sc.RecvJS(ctx, topic, workQueue)
+	if responseCh == nil {
+		return fmt.Errorf("Could not receive JetStream")
+	}
 
 	goroutineName := "ProcessSubJSMsgs"
 	var err error
@@ -114,15 +118,15 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 				select {
 
 				case r := <-responseCh:
-					if r.err != nil {
-						sc.Logger.Log("Error receiving from sidecar: %v\n", r.err)
+					if r.Err != nil {
+						sc.Logger.Log("Error receiving from sidecar: %v\n", r.Err)
 						_ = sc.Unsub(ctx, subscribedTopic)
 						break LOOP
 					}
 
 					// Do not log received message to NATS. This creates a loop.
 
-					f(r.response)
+					f(r.Response)
 
 				case <-ctx.Done():
 					_ = sc.Unsub(ctx, subscribedTopic)
@@ -150,6 +154,7 @@ func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
 
 	return nil
 }
+*/
 
 func (sc *SC) RecvJS(ctx context.Context, topic string, workQueue string) <-chan *ResponseJS {
 
@@ -169,21 +174,27 @@ func (sc *SC) RecvJS(ctx context.Context, topic string, workQueue string) <-chan
 		func() {
 		LOOP:
 			for {
-				subJSTopicRsp, err := sc.client.RecvJS(ctx, &recvJSMsg)
-				if err != nil {
-					sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
+				select {
+				case <-ctx.Done():
+					fmt.Printf(">>>> Context done for goroutine: %s. err: %v\n",
+						goroutineName, ctx.Err())
+
 					break LOOP
-				}
+				default:
+					// fmt.Printf(">>>> Calling sc.client.RecvJS\n")
+					subJSTopicRsp, err := sc.client.RecvJS(ctx, &recvJSMsg)
+					if err != nil {
+						sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
+						break LOOP
+					}
 
-				// Do not log received message to NATS. This creates a loop.
-
-				responseJSCh <- &ResponseJS{
-					subJSTopicRsp,
-					nil,
-				}
-
-				if ctx.Err() != nil {
-					break LOOP
+					// Do not log received message to NATS. This creates a loop.
+					// fmt.Printf(">>>> Got 1 message\n")
+					responseJSCh <- &ResponseJS{
+						subJSTopicRsp,
+						nil,
+					}
+					// time.Sleep(time.Second)
 				}
 			}
 			fmt.Printf("GOROUTINE 1 completed in function Recv\n")

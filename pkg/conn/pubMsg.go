@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	"github.com/find-in-docs/sidecar/pkg/log"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
+	"github.com/nats-io/nats.go"
 )
 
 type Pubs struct {
@@ -50,8 +50,8 @@ func RetryFunc(effector Effector, retries int, delay time.Duration) Effector {
 			fmt.Printf("Attempt %d failed; \n\terr: %v\n\tretrying in %v", r+1, err, delay)
 
 			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			case <-ctx2.Done():
+				return nil, ctx2.Err()
 			default:
 			}
 		}

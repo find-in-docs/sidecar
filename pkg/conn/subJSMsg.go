@@ -3,6 +3,7 @@ package conn
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/find-in-docs/sidecar/pkg/log"
 	"github.com/find-in-docs/sidecar/pkg/utils"
@@ -29,9 +30,10 @@ func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMs
 	subs.natsJSMsgs[topic] = topicMsgs
 
 	subscription, err := subs.natsConn.js.PullSubscribe(topic, workQueue,
-		nats.PullMaxWaiting(128), nats.Durable(workQueue))
+		nats.PullMaxWaiting(128))
 	if err != nil {
-		return nil, fmt.Errorf("Could not subscribe: topic: %s workQueue: %s: %w", err)
+		return nil, fmt.Errorf("Could not subscribe: topic: %s workQueue: %s: %w",
+			topic, workQueue, err)
 	}
 
 	// Fetch messages in batches here
@@ -43,23 +45,30 @@ func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMs
 				select {
 				case <-ctx.Done():
 
-					unsubscribeJS(subs, topic)
-
 					if ctx.Err() != nil {
 						fmt.Printf("Done channel signaled: err: %v\n",
 							ctx.Err())
 					}
+
+					unsubscribeJS(subs, topic)
+
+					// Wait until client removes messages from channel
+					// time.Sleep(10 * time.Second)
 					break LOOP
 				default:
+					time.Sleep(time.Second)
 				}
 
-				// Why is the Context() function not found?
-				// ms, err := subscription.Fetch(10, subs.natsConn.nc.Context(ctx))
-				ms, err := subscription.Fetch(10)
+				fmt.Printf("<<<<<<<<<<<<<<<< Fetching ... \n")
+				ms, err := subscription.Fetch(7000, nats.MaxWait(10*time.Second))
 				if err != nil {
 					fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
 						topic, err)
-					break
+				}
+				fmt.Printf("<<<<<<<<<<<<<<<<< Done fetching ... ms: %v err: %v\n",
+					ms, err)
+				if ms == nil {
+					continue
 				}
 
 				for _, m := range ms {
@@ -107,7 +116,7 @@ func RecvJSFromNATS(ctx context.Context, srv *Server, in *pb.ReceiveJS) (*pb.Sub
 
 	case m := <-natsJSMsgs:
 		if m == nil {
-			return nil, fmt.Errorf("Warning - already unsubscribed from topic: %s\n", in.Topic)
+			return nil, nil
 		}
 
 		s := fmt.Sprintf("Header:%s\n\tTopic: %s\n\tWorkQueue: %s\n",

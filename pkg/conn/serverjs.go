@@ -40,6 +40,23 @@ func (s *Server) UnsubJS(ctx context.Context, in *pb.UnsubJSMsg) (*pb.UnsubJSMsg
 	return m, err
 }
 
+func emptySubJSTopicResponse(header *pb.Header, topic, wq string) *pb.SubJSTopicResponse {
+	return &pb.SubJSTopicResponse{
+
+		Header: &pb.Header{
+			MsgType:     pb.MsgType_MSG_TYPE_SUB_JS_TOPIC_RSP,
+			SrcServType: header.DstServType,
+			DstServType: header.SrcServType,
+			ServId:      header.ServId,
+			MsgId:       NextMsgId(),
+		},
+
+		Topic:     topic,
+		WorkQueue: wq,
+		Msg:       []byte(""),
+	}
+}
+
 func (s *Server) RecvJS(ctx context.Context, in *pb.ReceiveJS) (*pb.SubJSTopicResponse, error) {
 
 	in.Header.MsgId = NextMsgId()
@@ -50,6 +67,10 @@ func (s *Server) RecvJS(ctx context.Context, in *pb.ReceiveJS) (*pb.SubJSTopicRe
 	if err != nil {
 		s.Logs.logger.Log("Could not receive from NATS: %s\n", err.Error())
 		return nil, err
+	}
+	if m == nil {
+		fmt.Printf("RecvJSFromNATS returned nil m\n")
+		return emptySubJSTopicResponse(in.Header, in.Topic, in.WorkQueue), err
 	}
 	m.Header.MsgId = NextMsgId()
 	s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
