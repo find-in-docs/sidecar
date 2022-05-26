@@ -16,6 +16,7 @@ func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
 	js.AddStream(&nats.StreamConfig{
 		Name:     "pullBasedSubscriberStream",
 		Subjects: []string{"search.doc.import.v1"},
+		Storage:  nats.FileStorage, // default: nats.FileStorage
 	})
 
 	return js, nil
