@@ -13,7 +13,7 @@ import (
 
 func InitNATSconn() (*Conn, error) {
 
-	c, err := NewNATSConn(viper.GetString("natsUrl"))
+	c, err := NewNATSConn(viper.GetString("nats.url"))
 
 	if err != nil {
 		os.Exit(-1)

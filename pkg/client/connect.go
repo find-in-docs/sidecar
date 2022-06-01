@@ -15,7 +15,7 @@ import (
 )
 
 type SC struct {
-	client pb.SidecarClient
+	Client pb.SidecarClient
 	header *pb.Header
 	Logger *Logger
 }
@@ -123,7 +123,7 @@ func (sc *SC) Register(serviceName string, regParams *pb.RegistrationParams) err
 		RegParams:   rParams,
 	}
 
-	rRsp, err := sc.client.Register(context.Background(), rMsg)
+	rRsp, err := sc.Client.Register(context.Background(), rMsg)
 	sc.Logger.Log("Registration msg sent:\n\t%s\n", rMsg)
 	if err != nil {
 		sc.Logger.Log("Sending Registration caused error: %v\n", err)
@@ -150,7 +150,7 @@ func (sc *SC) Pub(ctx context.Context, topic string, data []byte, rb *pb.RetryBe
 		Retry:  rb,
 	}
 
-	pubRsp, err := sc.client.Pub(ctx, &pubMsg)
+	pubRsp, err := sc.Client.Pub(ctx, &pubMsg)
 	sc.Logger.Log("Pub message sent: %s\n", pubMsg.String())
 	if err != nil {
 		sc.Logger.Log("Could not publish to topic: %s\n\tmessage:\n\tmsg: %s %v\n",
@@ -180,7 +180,7 @@ func (sc *SC) Sub(ctx context.Context, topic string, chanSize uint32) error {
 		ChanSize: chanSize,
 	}
 
-	subRsp, err := sc.client.Sub(ctx, &subMsg)
+	subRsp, err := sc.Client.Sub(ctx, &subMsg)
 	sc.Logger.Log("Sub message sent:\n\t%s\n", &subMsg)
 	if err != nil {
 		sc.Logger.Log("Could not subscribe to topic: %s %v\n",
@@ -209,7 +209,7 @@ func (sc *SC) Unsub(ctx context.Context, topic string) error {
 		Topic:  topic,
 	}
 
-	unsubRsp, err := sc.client.Unsub(ctx, &unsubMsg)
+	unsubRsp, err := sc.Client.Unsub(ctx, &unsubMsg)
 	sc.Logger.Log("Unsub message sent:\n\t%s\n", &unsubMsg)
 	if err != nil {
 		sc.Logger.Log("Could not unsubscribe from topic:\n\ttopic: %s %v\n", topic, err)
@@ -298,7 +298,7 @@ func (sc *SC) Recv(ctx context.Context, topic string) <-chan *Response {
 		func() {
 		LOOP:
 			for {
-				subTopicRsp, err := sc.client.Recv(ctx, &recvMsg)
+				subTopicRsp, err := sc.Client.Recv(ctx, &recvMsg)
 				if err != nil {
 					sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
 					break LOOP

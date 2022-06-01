@@ -35,12 +35,6 @@ func NewNATSConn(url string) (*Conn, error) {
 
 	c := Conn{nc, nil, url}
 
-	c.js, err = NewNATSConnJS(nc)
-	if err != nil {
-		return nil, fmt.Errorf("Error setting PublishAsyncMaxPending on Jetstream: %w\n",
-			err)
-	}
-
 	return &c, nil
 }
 

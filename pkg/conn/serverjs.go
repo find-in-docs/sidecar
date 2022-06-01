@@ -3,21 +3,122 @@ package conn
 import (
 	"context"
 	"fmt"
+	"io"
 
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
+	"github.com/golang/protobuf/proto"
+	"github.com/spf13/viper"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (s *Server) SubJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
+/*
+func (s *Server) ThrottleSender(stream pb.Sidecar_DocUploadStreamServer, lastMsgNum uint64) error {
+
+	jsName := viper.GetString("nats.jetstream.name")
+	jsInfo, err := s.Pubs.natsConn.js.StreamInfo(jsName)
+	if err != nil {
+		return fmt.Errorf("Error getting JetStream info for stream: %s. %w", jsName, err)
+	}
+
+	numMessages := int64(jsInfo.State.LastSeq - jsInfo.State.FirstSeq)
+	fmt.Printf("numMessages: %d\n", numMessages)
+	maxNumMsgs := viper.GetInt64("nats.jetstream.maxNumMsgs")
+	if numMessages > maxNumMsgs {
+		fmt.Printf("Throttling sender - exceeded max msgs threshold of %d\n", maxNumMsgs)
+		// throttle sender
+		stream.Send(&pb.DocUploadResponse{
+			Control: &pb.StreamControl{
+				Flow: pb.StreamFlow_OFF,
+			},
+			AckMsgNumber: lastMsgNum,
+		})
+	}
+
+	return nil
+}
+*/
+
+func (s *Server) pubNATS(topic, name string, in *pb.DocUpload) error {
+
+	js := s.Pubs.natsConn.js
+
+	fmt.Printf("PubNATS: entered\n")
+	defer fmt.Printf("pubNATS: exiting\n")
+
+	s.Logs.logger.Log("PubNATS: %s\n", in)
+
+	bs, err := proto.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("Error marshalling upload document: %w", err)
+	}
+
+	fmt.Printf("PubNATS: publishing\n")
+	future, err := js.PublishAsync(topic, bs)
+	if err != nil {
+		return fmt.Errorf("Error publishing to JetStream with topic: %s\n",
+			topic)
+	}
+	s.Logs.logger.Log("Published to JetStream - future returned: %v\n", future)
+
+	fmt.Printf("PubNATS: published\n")
+
+	return nil
+}
+
+func (s *Server) DocUploadStream(stream pb.Sidecar_DocUploadStreamServer) error {
+
+	// fmt.Printf("DocUPloadStream: entered\n")
+	defer fmt.Printf("DocUploadStream: exiting\n")
+
+	topic := viper.GetString("nats.jetstream.subject")
+	name := viper.GetString("nats.jetstream.name")
+
+	var err error
+	var docUpload *pb.DocUpload
+
+	for {
+
+		docUpload, err = stream.Recv()
+		if err == io.EOF {
+			fmt.Printf("DocUploadStream: Stream ended\n")
+			return nil
+		}
+
+		if err != nil {
+			fmt.Printf("DocUploadStream: error: %v\n", err)
+			return fmt.Errorf("Error receiving from stream on server: %w", err)
+		}
+
+		fmt.Printf("DocUploadStream: Sending to NATS server\n")
+		// Send document to NATS server
+		s.pubNATS(topic, name, docUpload)
+
+		// Based on how busy NATS server is , throttle the sender
+		// s.ThrottleSender(stream, docUpload.MsgNumber)
+	}
+
+	return nil
+}
+
+func (s *Server) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgResponse, error) {
 
 	in.Header.MsgId = NextMsgId()
-	s.Logs.logger.Log("Received SubJSMsg: %s\n", in)
+	s.Logs.logger.Log("Received AddJSMsg: %s\n", in)
 
-	m, err := s.Subs.SubscribeJS(ctx, in)
+	var err error
+	s.Subs.natsConn.js, err = NewNATSConnJS(s.Subs.natsConn.nc)
+	if err != nil {
+
+		return nil, fmt.Errorf("Error setting PublishAsyncMaxPending on Jetstream: %w\n",
+			err)
+	}
+
+	m, err := s.Subs.AddJS(ctx, in)
 	if err != nil {
 		s.Logs.logger.Log("Error subscribing: %s\n", err.Error())
 		return nil, err
 	}
+
 	m.Header.MsgId = NextMsgId()
 	s.Logs.logger.Log("Sending SubJSMsgRsp: %s\n", m)
 

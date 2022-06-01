@@ -9,6 +9,7 @@ import (
 	"github.com/find-in-docs/sidecar/pkg/utils"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
 )
 
 func unsubscribeJS(subs *Subs, topic string) {
@@ -20,17 +21,18 @@ func unsubscribeJS(subs *Subs, topic string) {
 	delete(subs.natsJSMsgs, topic)
 }
 
-func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMsgResponse, error) {
+func (subs *Subs) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgResponse, error) {
 
 	topic := in.GetTopic()
 	workQueue := in.GetWorkQueue()
-	chanSize := in.GetChanSize()
+	chanSize := viper.GetInt("nats.jetstream.goroutineChanSize")
 
 	topicMsgs := make(chan *nats.Msg, chanSize)
 	subs.natsJSMsgs[topic] = topicMsgs
 
 	subscription, err := subs.natsConn.js.PullSubscribe(topic, workQueue,
-		nats.PullMaxWaiting(128))
+		nats.PullMaxWaiting(128),
+		nats.DeliverNew())
 	if err != nil {
 		return nil, fmt.Errorf("Could not subscribe: topic: %s workQueue: %s: %w",
 			topic, workQueue, err)
@@ -74,6 +76,13 @@ func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMs
 				for _, m := range ms {
 					m.Ack()
 					subs.natsJSMsgs[topic] <- m
+
+					meta, _ := m.Metadata()
+
+					// Stream and Consumer sequences.
+					fmt.Printf("Stream seq: %s:%d, Consumer seq: %s:%d\n", meta.Stream, meta.Sequence.Stream, meta.Consumer, meta.Sequence.Consumer)
+					fmt.Printf("Pending: %d\n", meta.NumPending)
+					fmt.Printf("Pending: %d\n", meta.NumDelivered)
 				}
 			}
 			fmt.Printf("GOROUTINE %s completed\n", goroutineName)
@@ -86,7 +95,7 @@ func (subs *Subs) SubscribeJS(ctx context.Context, in *pb.SubJSMsg) (*pb.SubJSMs
 
 	subs.subscriptionsJS[topic] = subscription
 
-	subJSMsgRsp := &pb.SubJSMsgResponse{
+	subJSMsgRsp := &pb.AddJSMsgResponse{
 		Header: &pb.Header{
 			MsgType:     pb.MsgType_MSG_TYPE_SUB_JS_RSP,
 			SrcServType: "sidecar",

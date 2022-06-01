@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
 )
 
 func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
@@ -14,8 +15,8 @@ func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
 	}
 
 	js.AddStream(&nats.StreamConfig{
-		Name:     "pullBasedSubscriberStream",
-		Subjects: []string{"search.doc.import.v1"},
+		Name:     viper.GetString("nats.jetstream.name"),
+		Subjects: []string{viper.GetString("nats.jetstream.subject")},
 		Storage:  nats.FileStorage, // default: nats.FileStorage
 	})
 

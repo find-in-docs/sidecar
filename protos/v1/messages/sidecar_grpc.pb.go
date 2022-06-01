@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SidecarClient interface {
 	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
-	SubJS(ctx context.Context, in *SubJSMsg, opts ...grpc.CallOption) (*SubJSMsgResponse, error)
+	DocUploadStream(ctx context.Context, opts ...grpc.CallOption) (Sidecar_DocUploadStreamClient, error)
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
 	RecvJS(ctx context.Context, in *ReceiveJS, opts ...grpc.CallOption) (*SubJSTopicResponse, error)
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
@@ -29,6 +29,7 @@ type SidecarClient interface {
 	Pub(ctx context.Context, in *PubMsg, opts ...grpc.CallOption) (*PubMsgResponse, error)
 	PubJS(ctx context.Context, in *PubJSMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddJS(ctx context.Context, in *AddJSMsg, opts ...grpc.CallOption) (*AddJSMsgResponse, error)
 }
 
 type sidecarClient struct {
@@ -57,13 +58,35 @@ func (c *sidecarClient) Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *sidecarClient) SubJS(ctx context.Context, in *SubJSMsg, opts ...grpc.CallOption) (*SubJSMsgResponse, error) {
-	out := new(SubJSMsgResponse)
-	err := c.cc.Invoke(ctx, "/messages.Sidecar/SubJS", in, out, opts...)
+func (c *sidecarClient) DocUploadStream(ctx context.Context, opts ...grpc.CallOption) (Sidecar_DocUploadStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Sidecar_ServiceDesc.Streams[0], "/messages.Sidecar/DocUploadStream", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &sidecarDocUploadStreamClient{stream}
+	return x, nil
+}
+
+type Sidecar_DocUploadStreamClient interface {
+	Send(*DocUpload) error
+	Recv() (*DocUploadResponse, error)
+	grpc.ClientStream
+}
+
+type sidecarDocUploadStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *sidecarDocUploadStreamClient) Send(m *DocUpload) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *sidecarDocUploadStreamClient) Recv() (*DocUploadResponse, error) {
+	m := new(DocUploadResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *sidecarClient) Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error) {
@@ -129,13 +152,22 @@ func (c *sidecarClient) Log(ctx context.Context, in *LogMsg, opts ...grpc.CallOp
 	return out, nil
 }
 
+func (c *sidecarClient) AddJS(ctx context.Context, in *AddJSMsg, opts ...grpc.CallOption) (*AddJSMsgResponse, error) {
+	out := new(AddJSMsgResponse)
+	err := c.cc.Invoke(ctx, "/messages.Sidecar/AddJS", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SidecarServer is the server API for Sidecar service.
 // All implementations must embed UnimplementedSidecarServer
 // for forward compatibility
 type SidecarServer interface {
 	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
-	SubJS(context.Context, *SubJSMsg) (*SubJSMsgResponse, error)
+	DocUploadStream(Sidecar_DocUploadStreamServer) error
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
 	RecvJS(context.Context, *ReceiveJS) (*SubJSTopicResponse, error)
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
@@ -143,6 +175,7 @@ type SidecarServer interface {
 	Pub(context.Context, *PubMsg) (*PubMsgResponse, error)
 	PubJS(context.Context, *PubJSMsg) (*emptypb.Empty, error)
 	Log(context.Context, *LogMsg) (*emptypb.Empty, error)
+	AddJS(context.Context, *AddJSMsg) (*AddJSMsgResponse, error)
 	mustEmbedUnimplementedSidecarServer()
 }
 
@@ -156,8 +189,8 @@ func (UnimplementedSidecarServer) Register(context.Context, *RegistrationMsg) (*
 func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sub not implemented")
 }
-func (UnimplementedSidecarServer) SubJS(context.Context, *SubJSMsg) (*SubJSMsgResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubJS not implemented")
+func (UnimplementedSidecarServer) DocUploadStream(Sidecar_DocUploadStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method DocUploadStream not implemented")
 }
 func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
@@ -179,6 +212,9 @@ func (UnimplementedSidecarServer) PubJS(context.Context, *PubJSMsg) (*emptypb.Em
 }
 func (UnimplementedSidecarServer) Log(context.Context, *LogMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
+}
+func (UnimplementedSidecarServer) AddJS(context.Context, *AddJSMsg) (*AddJSMsgResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddJS not implemented")
 }
 func (UnimplementedSidecarServer) mustEmbedUnimplementedSidecarServer() {}
 
@@ -229,22 +265,30 @@ func _Sidecar_Sub_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Sidecar_SubJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubJSMsg)
-	if err := dec(in); err != nil {
+func _Sidecar_DocUploadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SidecarServer).DocUploadStream(&sidecarDocUploadStreamServer{stream})
+}
+
+type Sidecar_DocUploadStreamServer interface {
+	Send(*DocUploadResponse) error
+	Recv() (*DocUpload, error)
+	grpc.ServerStream
+}
+
+type sidecarDocUploadStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *sidecarDocUploadStreamServer) Send(m *DocUploadResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *sidecarDocUploadStreamServer) Recv() (*DocUpload, error) {
+	m := new(DocUpload)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(SidecarServer).SubJS(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/messages.Sidecar/SubJS",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SidecarServer).SubJS(ctx, req.(*SubJSMsg))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 func _Sidecar_Recv_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -373,6 +417,24 @@ func _Sidecar_Log_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sidecar_AddJS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddJSMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SidecarServer).AddJS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/messages.Sidecar/AddJS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SidecarServer).AddJS(ctx, req.(*AddJSMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Sidecar_ServiceDesc is the grpc.ServiceDesc for Sidecar service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -387,10 +449,6 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Sub",
 			Handler:    _Sidecar_Sub_Handler,
-		},
-		{
-			MethodName: "SubJS",
-			Handler:    _Sidecar_SubJS_Handler,
 		},
 		{
 			MethodName: "Recv",
@@ -420,7 +478,18 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Log",
 			Handler:    _Sidecar_Log_Handler,
 		},
+		{
+			MethodName: "AddJS",
+			Handler:    _Sidecar_AddJS_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DocUploadStream",
+			Handler:       _Sidecar_DocUploadStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "protos/v1/messages/sidecar.proto",
 }

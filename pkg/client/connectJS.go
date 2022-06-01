@@ -3,62 +3,123 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/find-in-docs/sidecar/pkg/utils"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
 )
 
-func (sc *SC) PubJS(ctx context.Context, topic string, workQueue string, data []byte) error {
+const (
+	chunkSize             = 5
+	allTopicsRecvChanSize = 32
+)
 
-	header := sc.header
-	header.MsgType = pb.MsgType_MSG_TYPE_PUB_JS
-	header.MsgId = 0
+func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
 
-	pubJSMsg := pb.PubJSMsg{
-		Header:    sc.header,
-		Topic:     topic,
-		WorkQueue: workQueue,
-		Msg:       data,
+	var flow pb.StreamFlow
+	stream, err := sc.Client.DocUploadStream(ctx)
+	if err != nil {
+		return fmt.Errorf("Error initializing document upload stream: %w", err)
 	}
 
-	_, err := sc.client.PubJS(ctx, &pubJSMsg)
-	// sc.Logger.Log("Pub JS message sent: %s\n", pubJSMsg.String())
-	if err != nil {
-		sc.Logger.Log("Could not publish to topic: %s\n\tworkQueue: %s\n\tmessage: %s\n\tmsg: %s\n\terr: %v\n",
-			topic, workQueue, string(data), err)
-		return err
+	utils.StartGoroutine("uploadDocsClientRecv", func() {
+	LOOP:
+		for {
+			select {
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					sc.Logger.Log("Done channel signaled: %v\n", err)
+				}
+				break LOOP
+			default:
+				response, err := stream.Recv()
+				if err == io.EOF {
+					fmt.Printf("Document upload stream ended.")
+					break LOOP
+				}
+				if err != nil {
+					fmt.Printf("Error receiving from document upload stream: %w", err)
+					break LOOP
+				}
+
+				flow = response.Control.Flow
+			}
+		}
+	})
+
+	documents := new(pb.Documents)
+	docs := make([]*pb.Doc, chunkSize)
+	documents.Doc = docs
+	var count int
+	var msgNumber uint64
+	var numOutput int
+
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			break LOOP
+		case doc := <-docsCh:
+
+			fmt.Println(count, doc)
+			docs[count] = doc
+			if count == chunkSize-1 {
+
+				fmt.Printf("Sending through stream\n")
+
+				if err = stream.Send(&pb.DocUpload{
+					Documents: documents,
+					MsgNumber: msgNumber,
+				}); err != nil {
+
+					return fmt.Errorf("Error sending to document upload stream: %w", err)
+				}
+
+				msgNumber++
+
+				fmt.Printf("Sent\n")
+				count = 0
+				numOutput++
+				if numOutput == 2 {
+					break LOOP
+				}
+			} else {
+
+				count++
+			}
+		}
 	}
 
 	return nil
 }
 
-func (sc *SC) SubJS(ctx context.Context, topic string, workQueue string, chanSize uint32) error {
+func (sc *SC) AddJS(ctx context.Context, topic, workQueue string) error {
 
 	header := sc.header
-	header.MsgType = pb.MsgType_MSG_TYPE_SUB_JS
+	header.MsgType = pb.MsgType_MSG_TYPE_ADD_JS
 	header.MsgId = 0
 
-	subJSMsg := pb.SubJSMsg{
-		Header:    header,
+	addJSMsg := pb.AddJSMsg{
+		Header:    sc.header,
 		Topic:     topic,
 		WorkQueue: workQueue,
-		ChanSize:  chanSize,
 	}
 
-	subJSRsp, err := sc.client.SubJS(ctx, &subJSMsg)
-	sc.Logger.Log("Sub message sent:\n\t%s\n", &subJSMsg)
+	addJSResp, err := sc.Client.AddJS(ctx, &addJSMsg)
+	sc.Logger.Log("Add JS message sent: %s\n", addJSMsg.String())
 	if err != nil {
-		sc.Logger.Log("Could not subscribe to topic: %s workQueue: %s %v\n",
+		sc.Logger.Log("Could not add stream with topic: %s\n\t"+
+			"workQueue: %s\n\terr: %v\n",
 			topic, workQueue, err)
 		return err
 	}
-	sc.Logger.Log("SubJS rsp received:\n\t%s\n", subJSRsp)
 
-	if subJSRsp.RspHeader.Status != uint32(pb.Status_OK) {
-		sc.Logger.Log("Error: received while publishing to topic:\n\ttopic: %s workQueue: %s %v\n",
-			topic, workQueue, err)
-		return err
+	sc.Logger.Log("AddJS rsp received:\n\t%s\n", addJSResp)
+
+	if addJSResp.RspHeader.Status != uint32(pb.Status_OK) {
+		return fmt.Errorf("Error: received while adding topic: %s workQueue: %s. err: %s",
+			topic, workQueue, pb.Status_name[int32(addJSResp.RspHeader.Status)])
 	}
 
 	return nil
@@ -76,7 +137,7 @@ func (sc *SC) UnsubJS(ctx context.Context, topic string, workQueue string) error
 		WorkQueue: workQueue,
 	}
 
-	unsubJSRsp, err := sc.client.UnsubJS(ctx, &unsubJSMsg)
+	unsubJSRsp, err := sc.Client.UnsubJS(ctx, &unsubJSMsg)
 	sc.Logger.Log("Unsub message sent:\n\t%s\n", &unsubJSMsg)
 	if err != nil {
 		sc.Logger.Log("Could not unsubscribe from topic:\n\ttopic: %s workQueue: %s %v\n",
@@ -181,8 +242,8 @@ func (sc *SC) RecvJS(ctx context.Context, topic string, workQueue string) <-chan
 
 					break LOOP
 				default:
-					// fmt.Printf(">>>> Calling sc.client.RecvJS\n")
-					subJSTopicRsp, err := sc.client.RecvJS(ctx, &recvJSMsg)
+					// fmt.Printf(">>>> Calling sc.Client.RecvJS\n")
+					subJSTopicRsp, err := sc.Client.RecvJS(ctx, &recvJSMsg)
 					if err != nil {
 						sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
 						break LOOP

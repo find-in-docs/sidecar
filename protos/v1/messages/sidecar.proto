@@ -25,6 +25,7 @@ enum MsgType {
 	MSG_TYPE_UNSUB_RSP = 15;
 	MSG_TYPE_UNSUB_JS = 16;
 	MSG_TYPE_UNSUB_JS_RSP = 17;
+	MSG_TYPE_ADD_JS = 18;
 }
 
 message Header {
@@ -120,19 +121,6 @@ message SubMsgResponse {
 	string msg = 3;
 }
 
-message SubJSMsg {
-	Header header = 1;
-	string topic = 2;
-	string workQueue = 3;
-	uint32 chanSize = 4;
-}
-
-message SubJSMsgResponse {
-	Header header = 1;
-	ResponseHeader rspHeader = 2;
-	string msg = 3;
-}
-
 message UnsubMsg {
 	Header header = 1;
 	string topic = 2;
@@ -197,19 +185,6 @@ message LogMsgResponse {
 	string msg = 3;
 }
 
-service Sidecar {
-	rpc Register (RegistrationMsg) returns (RegistrationMsgResponse);
-	rpc Sub (SubMsg) returns (SubMsgResponse);
-	rpc SubJS (SubJSMsg) returns (SubJSMsgResponse);
-	rpc Recv (Receive) returns (SubTopicResponse);
-	rpc RecvJS (ReceiveJS) returns (SubJSTopicResponse);
-	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
-	rpc UnsubJS (UnsubJSMsg) returns (UnsubJSMsgResponse);
-	rpc Pub (PubMsg) returns (PubMsgResponse);
-	rpc PubJS (PubJSMsg) returns (google.protobuf.Empty);
-	rpc Log (LogMsg) returns (google.protobuf.Empty);
-}
-
 message Doc {
 
 	uint64 docId = 1;
@@ -227,6 +202,61 @@ message Doc {
 
 message Documents {
 
-	repeated Doc docs = 1;
+	repeated Doc doc = 1;
+}
+
+enum StreamFlow {
+	OFF = 0;
+	ON = 1;
+	DECREASE = 2;
+	INCREASE = 3;
+	CONTINUE_SAME = 4;
+}
+
+message StreamControl {
+
+	StreamFlow flow = 1;
+}
+
+message DocUpload {
+
+	Documents documents = 1;
+	uint64 msgNumber = 2;
+}
+
+message DocUploadResponse {
+
+	StreamControl control = 1;
+	uint64 ackMsgNumber = 2;
+}
+
+message AddJSMsg {
+
+	Header header = 1;
+	string topic = 2;
+	string workQueue = 3;
+}
+
+message AddJSMsgResponse {
+
+	Header header = 1;
+	ResponseHeader rspHeader = 2;
+	string topic = 3;
+	string workQueue = 4;
+	string msg = 5;
+}
+
+service Sidecar {
+	rpc Register (RegistrationMsg) returns (RegistrationMsgResponse);
+	rpc Sub (SubMsg) returns (SubMsgResponse);
+	rpc DocUploadStream(stream DocUpload) returns (stream DocUploadResponse);
+	rpc Recv (Receive) returns (SubTopicResponse);
+	rpc RecvJS (ReceiveJS) returns (SubJSTopicResponse);
+	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);
+	rpc UnsubJS (UnsubJSMsg) returns (UnsubJSMsgResponse);
+	rpc Pub (PubMsg) returns (PubMsgResponse);
+	rpc PubJS (PubJSMsg) returns (google.protobuf.Empty);
+	rpc Log (LogMsg) returns (google.protobuf.Empty);
+	rpc AddJS (AddJSMsg) returns (AddJSMsgResponse);
 }
 
