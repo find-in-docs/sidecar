@@ -11,33 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-/*
-func (s *Server) ThrottleSender(stream pb.Sidecar_DocUploadStreamServer, lastMsgNum uint64) error {
-
-	jsName := viper.GetString("nats.jetstream.name")
-	jsInfo, err := s.Pubs.natsConn.js.StreamInfo(jsName)
-	if err != nil {
-		return fmt.Errorf("Error getting JetStream info for stream: %s. %w", jsName, err)
-	}
-
-	numMessages := int64(jsInfo.State.LastSeq - jsInfo.State.FirstSeq)
-	fmt.Printf("numMessages: %d\n", numMessages)
-	maxNumMsgs := viper.GetInt64("nats.jetstream.maxNumMsgs")
-	if numMessages > maxNumMsgs {
-		fmt.Printf("Throttling sender - exceeded max msgs threshold of %d\n", maxNumMsgs)
-		// throttle sender
-		stream.Send(&pb.DocUploadResponse{
-			Control: &pb.StreamControl{
-				Flow: pb.StreamFlow_OFF,
-			},
-			AckMsgNumber: lastMsgNum,
-		})
-	}
-
-	return nil
-}
-*/
-
 func (s *Server) pubNATS(topic, name string, in *pb.DocUpload) error {
 
 	js := s.Pubs.natsConn.js
@@ -67,14 +40,20 @@ func (s *Server) pubNATS(topic, name string, in *pb.DocUpload) error {
 
 func (s *Server) DocUploadStream(stream pb.Sidecar_DocUploadStreamServer) error {
 
-	// fmt.Printf("DocUPloadStream: entered\n")
-	defer fmt.Printf("DocUploadStream: exiting\n")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	topic := viper.GetString("nats.jetstream.subject")
 	name := viper.GetString("nats.jetstream.name")
 
 	var err error
 	var docUpload *pb.DocUpload
+
+	// Based on how busy NATS server is, throttle the sender
+	err = s.ThrottleGRPCSender(ctx, stream)
+	if err != nil {
+		return fmt.Errorf("Error throttling GRPC sender stream: %w", err)
+	}
 
 	for {
 
@@ -92,12 +71,7 @@ func (s *Server) DocUploadStream(stream pb.Sidecar_DocUploadStreamServer) error 
 		fmt.Printf("DocUploadStream: Sending to NATS server\n")
 		// Send document to NATS server
 		s.pubNATS(topic, name, docUpload)
-
-		// Based on how busy NATS server is , throttle the sender
-		// s.ThrottleSender(stream, docUpload.MsgNumber)
 	}
-
-	return nil
 }
 
 func (s *Server) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgResponse, error) {
@@ -109,7 +83,7 @@ func (s *Server) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgRespon
 	s.Subs.natsConn.js, err = NewNATSConnJS(s.Subs.natsConn.nc)
 	if err != nil {
 
-		return nil, fmt.Errorf("Error setting PublishAsyncMaxPending on Jetstream: %w\n",
+		return nil, fmt.Errorf("Error adding Jetstream: %w\n",
 			err)
 	}
 

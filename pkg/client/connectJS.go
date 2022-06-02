@@ -44,6 +44,7 @@ func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
 				}
 
 				flow = response.Control.Flow
+				fmt.Printf(">>>> Flow Control: %s\n", pb.StreamFlow_name[int32(flow)])
 			}
 		}
 	})
