@@ -218,6 +218,18 @@ message StreamControl {
 	StreamFlow flow = 1;
 }
 
+message DocDownload {
+
+	Documents documents = 1;
+	uint64 msgNumber = 2;
+}
+
+message DocDownloadResponse {
+
+	StreamControl control = 1;
+	uint64 ackMsgNumber = 2;
+}
+
 message DocUpload {
 
 	Documents documents = 1;
@@ -250,6 +262,7 @@ service Sidecar {
 	rpc Register (RegistrationMsg) returns (RegistrationMsgResponse);
 	rpc Sub (SubMsg) returns (SubMsgResponse);
 	rpc DocUploadStream(stream DocUpload) returns (stream DocUploadResponse);
+	rpc DocDownloadStream(stream DocDownloadResponse) returns (stream DocDownload);
 	rpc Recv (Receive) returns (SubTopicResponse);
 	rpc RecvJS (ReceiveJS) returns (SubJSTopicResponse);
 	rpc Unsub (UnsubMsg) returns (UnsubMsgResponse);

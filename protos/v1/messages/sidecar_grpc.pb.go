@@ -22,6 +22,7 @@ type SidecarClient interface {
 	Register(ctx context.Context, in *RegistrationMsg, opts ...grpc.CallOption) (*RegistrationMsgResponse, error)
 	Sub(ctx context.Context, in *SubMsg, opts ...grpc.CallOption) (*SubMsgResponse, error)
 	DocUploadStream(ctx context.Context, opts ...grpc.CallOption) (Sidecar_DocUploadStreamClient, error)
+	DocDownloadStream(ctx context.Context, opts ...grpc.CallOption) (Sidecar_DocDownloadStreamClient, error)
 	Recv(ctx context.Context, in *Receive, opts ...grpc.CallOption) (*SubTopicResponse, error)
 	RecvJS(ctx context.Context, in *ReceiveJS, opts ...grpc.CallOption) (*SubJSTopicResponse, error)
 	Unsub(ctx context.Context, in *UnsubMsg, opts ...grpc.CallOption) (*UnsubMsgResponse, error)
@@ -83,6 +84,37 @@ func (x *sidecarDocUploadStreamClient) Send(m *DocUpload) error {
 
 func (x *sidecarDocUploadStreamClient) Recv() (*DocUploadResponse, error) {
 	m := new(DocUploadResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *sidecarClient) DocDownloadStream(ctx context.Context, opts ...grpc.CallOption) (Sidecar_DocDownloadStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Sidecar_ServiceDesc.Streams[1], "/messages.Sidecar/DocDownloadStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &sidecarDocDownloadStreamClient{stream}
+	return x, nil
+}
+
+type Sidecar_DocDownloadStreamClient interface {
+	Send(*DocDownloadResponse) error
+	Recv() (*DocDownload, error)
+	grpc.ClientStream
+}
+
+type sidecarDocDownloadStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *sidecarDocDownloadStreamClient) Send(m *DocDownloadResponse) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *sidecarDocDownloadStreamClient) Recv() (*DocDownload, error) {
+	m := new(DocDownload)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -168,6 +200,7 @@ type SidecarServer interface {
 	Register(context.Context, *RegistrationMsg) (*RegistrationMsgResponse, error)
 	Sub(context.Context, *SubMsg) (*SubMsgResponse, error)
 	DocUploadStream(Sidecar_DocUploadStreamServer) error
+	DocDownloadStream(Sidecar_DocDownloadStreamServer) error
 	Recv(context.Context, *Receive) (*SubTopicResponse, error)
 	RecvJS(context.Context, *ReceiveJS) (*SubJSTopicResponse, error)
 	Unsub(context.Context, *UnsubMsg) (*UnsubMsgResponse, error)
@@ -191,6 +224,9 @@ func (UnimplementedSidecarServer) Sub(context.Context, *SubMsg) (*SubMsgResponse
 }
 func (UnimplementedSidecarServer) DocUploadStream(Sidecar_DocUploadStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method DocUploadStream not implemented")
+}
+func (UnimplementedSidecarServer) DocDownloadStream(Sidecar_DocDownloadStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method DocDownloadStream not implemented")
 }
 func (UnimplementedSidecarServer) Recv(context.Context, *Receive) (*SubTopicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Recv not implemented")
@@ -285,6 +321,32 @@ func (x *sidecarDocUploadStreamServer) Send(m *DocUploadResponse) error {
 
 func (x *sidecarDocUploadStreamServer) Recv() (*DocUpload, error) {
 	m := new(DocUpload)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Sidecar_DocDownloadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SidecarServer).DocDownloadStream(&sidecarDocDownloadStreamServer{stream})
+}
+
+type Sidecar_DocDownloadStreamServer interface {
+	Send(*DocDownload) error
+	Recv() (*DocDownloadResponse, error)
+	grpc.ServerStream
+}
+
+type sidecarDocDownloadStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *sidecarDocDownloadStreamServer) Send(m *DocDownload) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *sidecarDocDownloadStreamServer) Recv() (*DocDownloadResponse, error) {
+	m := new(DocDownloadResponse)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -487,6 +549,12 @@ var Sidecar_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "DocUploadStream",
 			Handler:       _Sidecar_DocUploadStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "DocDownloadStream",
+			Handler:       _Sidecar_DocDownloadStream_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

@@ -14,13 +14,14 @@ const (
 )
 
 type Subs struct {
-	natsMsgs        map[string]chan *nats.Msg
-	natsJSMsgs      map[string]chan *nats.Msg
-	subscriptions   map[string]*nats.Subscription
-	subscriptionsJS map[string]*nats.Subscription
-	msgId           uint32
-	natsConn        *Conn
-	header          *pb.Header
+	natsMsgs           map[string]chan *nats.Msg
+	natsJSMsgs         map[string]chan *nats.Msg
+	subscriptions      map[string]*nats.Subscription
+	subscriptionsJS    map[string]*nats.Subscription
+	currentStreamTopic string
+	msgId              uint32
+	natsConn           *Conn
+	header             *pb.Header
 }
 
 func InitSubs(natsConn *Conn, srv *Server) {

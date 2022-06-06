@@ -11,6 +11,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+func (s *Server) DocDownloadStream(stream pb.Sidecar_DocDownloadStreamServer) error {
+
+	return s.Subs.DownloadJS(stream)
+}
+
 func (s *Server) pubNATS(topic, name string, in *pb.DocUpload) error {
 
 	js := s.Pubs.natsConn.js
@@ -111,44 +116,6 @@ func (s *Server) UnsubJS(ctx context.Context, in *pb.UnsubJSMsg) (*pb.UnsubJSMsg
 	}
 	m.Header.MsgId = NextMsgId()
 	s.Logs.logger.Log("Sending UnsubMsgRsp: %s\n", m)
-
-	return m, err
-}
-
-func emptySubJSTopicResponse(header *pb.Header, topic, wq string) *pb.SubJSTopicResponse {
-	return &pb.SubJSTopicResponse{
-
-		Header: &pb.Header{
-			MsgType:     pb.MsgType_MSG_TYPE_SUB_JS_TOPIC_RSP,
-			SrcServType: header.DstServType,
-			DstServType: header.SrcServType,
-			ServId:      header.ServId,
-			MsgId:       NextMsgId(),
-		},
-
-		Topic:     topic,
-		WorkQueue: wq,
-		Msg:       []byte(""),
-	}
-}
-
-func (s *Server) RecvJS(ctx context.Context, in *pb.ReceiveJS) (*pb.SubJSTopicResponse, error) {
-
-	in.Header.MsgId = NextMsgId()
-	// Do not log message to NATS. This creates a loop.
-	s.Logs.logger.PrintMsg("Received from NATS: %s\n", in)
-
-	m, err := RecvJSFromNATS(ctx, s, in)
-	if err != nil {
-		s.Logs.logger.Log("Could not receive from NATS: %s\n", err.Error())
-		return nil, err
-	}
-	if m == nil {
-		fmt.Printf("RecvJSFromNATS returned nil m\n")
-		return emptySubJSTopicResponse(in.Header, in.Topic, in.WorkQueue), err
-	}
-	m.Header.MsgId = NextMsgId()
-	s.Logs.logger.PrintMsg("Converted NATS message to GRPC message\n")
 
 	return m, err
 }

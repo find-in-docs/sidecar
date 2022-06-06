@@ -4,16 +4,101 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+	"time"
 
 	"github.com/find-in-docs/sidecar/pkg/utils"
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
+	"github.com/spf13/viper"
 )
 
 const (
 	chunkSize             = 5
 	allTopicsRecvChanSize = 32
 )
+
+func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (chan *pb.DocDownload, error) {
+
+	err := sc.AddJS(ctx, subject, durableName)
+	if err != nil {
+		return nil, fmt.Errorf("Error adding jetstream: %w", err)
+	}
+
+	recvChanSize := viper.GetInt("nats.jetstream.recvChanSize")
+	recvDocs := make(chan *pb.DocDownload, recvChanSize)
+
+	stream, err := sc.Client.DocDownloadStream(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing document upload stream: %w", err)
+	}
+
+	utils.StartGoroutine("downloadDocsClientRecv", func() {
+	LOOP:
+		for {
+			select {
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					sc.Logger.Log("Done channel signaled: %v\n", err)
+				}
+				break LOOP
+			default:
+				docsDownload, err := stream.Recv()
+				if err == io.EOF {
+					fmt.Printf("2 Document download stream ended.")
+					break LOOP
+				}
+				if err != nil {
+					fmt.Printf("2 Error receiving from document download stream: %w", err)
+					break LOOP
+				}
+
+				recvDocs <- docsDownload
+			}
+		}
+	})
+
+	utils.StartGoroutine("downloadDocsClientRecv", func() {
+	LOOP2:
+		for {
+			select {
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					sc.Logger.Log("Done channel signaled: %v\n", err)
+				}
+				break LOOP2
+			case <-time.After(time.Second):
+
+				percentChannelUsed := int((cap(recvDocs) - len(recvDocs)) /
+					cap(recvDocs) * 100)
+				if percentChannelUsed > 50 {
+
+					if err = stream.Send(&pb.DocDownloadResponse{
+						Control: &pb.StreamControl{
+							Flow: pb.StreamFlow_OFF,
+						},
+
+						AckMsgNumber: 0,
+					}); err != nil {
+
+						break LOOP2
+					}
+				} else {
+					if err = stream.Send(&pb.DocDownloadResponse{
+						Control: &pb.StreamControl{
+							Flow: pb.StreamFlow_ON,
+						},
+
+						AckMsgNumber: 0,
+					}); err != nil {
+
+						break LOOP2
+					}
+				}
+			}
+		}
+	})
+
+	return recvDocs, nil
+}
 
 func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
 
@@ -153,120 +238,4 @@ func (sc *SC) UnsubJS(ctx context.Context, topic string, workQueue string) error
 	}
 
 	return nil
-}
-
-type ResponseJS struct {
-	Response *pb.SubJSTopicResponse
-	Err      error
-}
-
-/*
-func (sc *SC) ProcessSubJSMsgs(ctx context.Context, topic, workQueue string,
-	chanSize uint32, f func(*pb.SubJSTopicResponse)) error {
-
-	responseCh := sc.RecvJS(ctx, topic, workQueue)
-	if responseCh == nil {
-		return fmt.Errorf("Could not receive JetStream")
-	}
-
-	goroutineName := "ProcessSubJSMsgs"
-	var err error
-	err = utils.StartGoroutine(goroutineName,
-		func() {
-			subscribedTopic := topic
-
-		LOOP:
-			for {
-				select {
-
-				case r := <-responseCh:
-					if r.Err != nil {
-						sc.Logger.Log("Error receiving from sidecar: %v\n", r.Err)
-						_ = sc.Unsub(ctx, subscribedTopic)
-						break LOOP
-					}
-
-					// Do not log received message to NATS. This creates a loop.
-
-					f(r.Response)
-
-				case <-ctx.Done():
-					_ = sc.Unsub(ctx, subscribedTopic)
-
-					if ctx.Err() != nil {
-						sc.Logger.Log("Done channel signaled: %v\n",
-							ctx.Err())
-					}
-					break LOOP
-				}
-			}
-			fmt.Printf("GOROUTINE 2 completed in function ProcessSubJSMsgs\n")
-			utils.GoroutineEnded(goroutineName)
-		})
-
-	if err != nil {
-		fmt.Printf("Error starting goroutine: %v\n", err)
-		os.Exit(-1)
-	}
-
-	err = sc.SubJS(ctx, topic, workQueue, chanSize)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-*/
-
-func (sc *SC) RecvJS(ctx context.Context, topic string, workQueue string) <-chan *ResponseJS {
-
-	header := sc.header
-	header.MsgId = 0
-
-	recvJSMsg := pb.ReceiveJS{
-		Header:    header,
-		Topic:     topic,
-		WorkQueue: workQueue,
-	}
-
-	responseJSCh := make(chan *ResponseJS)
-
-	goroutineName := "RecvJS"
-	err := utils.StartGoroutine(goroutineName,
-		func() {
-		LOOP:
-			for {
-				select {
-				case <-ctx.Done():
-					fmt.Printf(">>>> Context done for goroutine: %s. err: %v\n",
-						goroutineName, ctx.Err())
-
-					break LOOP
-				default:
-					// fmt.Printf(">>>> Calling sc.Client.RecvJS\n")
-					subJSTopicRsp, err := sc.Client.RecvJS(ctx, &recvJSMsg)
-					if err != nil {
-						sc.Logger.Log("Could not receive from sidecar - err: %v\n", err)
-						break LOOP
-					}
-
-					// Do not log received message to NATS. This creates a loop.
-					// fmt.Printf(">>>> Got 1 message\n")
-					responseJSCh <- &ResponseJS{
-						subJSTopicRsp,
-						nil,
-					}
-					// time.Sleep(time.Second)
-				}
-			}
-			fmt.Printf("GOROUTINE 1 completed in function Recv\n")
-			utils.GoroutineEnded(goroutineName)
-		})
-
-	if err != nil {
-		fmt.Printf("Error starting goroutine: %v\n", err)
-		os.Exit(-1)
-	}
-
-	return responseJSCh
 }

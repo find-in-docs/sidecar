@@ -30,7 +30,7 @@ func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
 		// off on a re-connection from the subscriber.
 
 		Durable:   "uploadDocsConsumer",
-		AckPolicy: nats.AckAllPolicy,
+		AckPolicy: nats.AckExplicitPolicy,
 	})
 	if err != nil {
 		return js, fmt.Errorf("Could not add consumer on stream %s: %w", streamName, err)
