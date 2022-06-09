@@ -25,11 +25,12 @@ func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
 
 	// We dont need to save the consumer info returned, since it is accessible
 	// from the NATS API
+	durableName := viper.GetString("nats.jetstream.consumer.durableName")
 	_, err = js.AddConsumer(streamName, &nats.ConsumerConfig{
 		// A durable consumer will pick up where it left
 		// off on a re-connection from the subscriber.
 
-		Durable:   "uploadDocsConsumer",
+		Durable:   durableName,
 		AckPolicy: nats.AckExplicitPolicy,
 	})
 	if err != nil {
