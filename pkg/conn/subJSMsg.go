@@ -49,7 +49,7 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 					break LOOP
 				}
 				if err != nil {
-					fmt.Printf("Error receiving from document download stream: %w\n", err)
+					fmt.Printf("Error during receive from document download stream: %v\n", err)
 					break LOOP
 				}
 
@@ -64,6 +64,16 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 	}
 
 	// Fetch messages in batches here
+	numMsgsToFetch := viper.GetInt("nats.jetstream.fetch.numMsgs")
+	maxWaitStr := viper.GetString("nats.jetstream.fetch.timeoutInSecs")
+	maxWait, err := time.ParseDuration(maxWaitStr)
+	if err != nil {
+		return fmt.Errorf("Error parsing NATS max wait timeout value: %w", err)
+	}
+	natsMaxWait := nats.MaxWait(maxWait)
+
+	waitOnFlowOff := 1
+
 	topic := subs.currentStreamTopic
 	subscription := subs.subscriptionsJS[topic]
 
@@ -83,11 +93,20 @@ LOOP:
 			// time.Sleep(10 * time.Second)
 			break LOOP
 		default:
-			time.Sleep(time.Second)
+			if flow == pb.StreamFlow_OFF {
+				waitOnFlowOff = waitOnFlowOff << 1
+				if waitOnFlowOff > 8 {
+					waitOnFlowOff = 8
+				}
+			} else if flow == pb.StreamFlow_ON {
+				waitOnFlowOff = waitOnFlowOff >> 1
+			}
+
+			time.Sleep(time.Second * time.Duration(waitOnFlowOff))
 		}
 
 		fmt.Printf("<<<<<<<<<<<<<<<< Fetching ... \n")
-		ms, err := subscription.Fetch(7000, nats.MaxWait(3*time.Second))
+		ms, err := subscription.Fetch(numMsgsToFetch, natsMaxWait)
 		if err != nil {
 			fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
 				topic, err)
