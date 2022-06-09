@@ -43,11 +43,11 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 			default:
 				docsDownload, err := stream.Recv()
 				if err == io.EOF {
-					fmt.Printf("2 Document download stream ended.")
+					fmt.Printf("Document download stream ended.")
 					break LOOP
 				}
 				if err != nil {
-					fmt.Printf("2 Error receiving from document download stream: %w", err)
+					fmt.Printf("Error receiving from document download stream: %v\n", err)
 					break LOOP
 				}
 
@@ -67,8 +67,10 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 				break LOOP2
 			case <-time.After(time.Second):
 
-				percentChannelUsed := int((cap(recvDocs) - len(recvDocs)) /
-					cap(recvDocs) * 100)
+				percentChannelUsed := int((cap(recvDocs) - len(recvDocs)) / (cap(recvDocs) * 100))
+				// fmt.Printf("cap: %d, l: %d, percentChannelUsed: %d\n",
+				//	c, l, percentChannelUsed)
+
 				if percentChannelUsed > 50 {
 
 					if err = stream.Send(&pb.DocDownloadResponse{
