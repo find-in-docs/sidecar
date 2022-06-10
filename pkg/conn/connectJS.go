@@ -20,6 +20,7 @@ func NewNATSConnJS(nc *nats.Conn) (nats.JetStreamContext, error) {
 		Name:     streamName,
 		Subjects: []string{topic},
 		Storage:  nats.FileStorage, // default: nats.FileStorage
+		MaxMsgs:  viper.GetInt64("nats.maxMsgs"),
 		NoAck:    false,
 	})
 

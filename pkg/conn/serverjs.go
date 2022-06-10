@@ -45,38 +45,54 @@ func (s *Server) pubNATS(topic, name string, in *pb.DocUpload) error {
 
 func (s *Server) DocUploadStream(stream pb.Sidecar_DocUploadStreamServer) error {
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := stream.Context()
 
 	topic := viper.GetString("nats.jetstream.subject")
 	name := viper.GetString("nats.jetstream.name")
 
 	var err error
+
 	var docUpload *pb.DocUpload
 
-	// Based on how busy NATS server is, throttle the sender
 	err = s.ThrottleGRPCSender(ctx, stream)
 	if err != nil {
-		return fmt.Errorf("Error throttling GRPC sender stream: %w", err)
+		return fmt.Errorf("Error starting goroutine uploadDocsThrottle: %w", err)
 	}
 
+LOOP2:
 	for {
+		select {
+		case <-ctx.Done():
 
-		docUpload, err = stream.Recv()
-		if err == io.EOF {
-			fmt.Printf("DocUploadStream: Stream ended\n")
-			return nil
+			if ctx.Err() != nil {
+				fmt.Printf("Done channel signaled: err: %v\n",
+					ctx.Err())
+			}
+
+			unsubscribeJS(s.Subs, s.Subs.currentStreamTopic)
+
+			// Wait until client removes messages from channel
+			// time.Sleep(10 * time.Second)
+			break LOOP2
+		default:
+			docUpload, err = stream.Recv()
+			if err == io.EOF {
+				fmt.Printf("DocUploadStream: Stream ended\n")
+				return nil
+			}
+
+			if err != nil {
+				fmt.Printf("DocUploadStream: error: %v\n", err)
+				return fmt.Errorf("Error receiving from stream on server: %w", err)
+			}
+
+			fmt.Printf("DocUploadStream: Sending to NATS server\n")
+			// Send document to NATS server
+			s.pubNATS(topic, name, docUpload)
 		}
-
-		if err != nil {
-			fmt.Printf("DocUploadStream: error: %v\n", err)
-			return fmt.Errorf("Error receiving from stream on server: %w", err)
-		}
-
-		fmt.Printf("DocUploadStream: Sending to NATS server\n")
-		// Send document to NATS server
-		s.pubNATS(topic, name, docUpload)
 	}
+
+	return nil
 }
 
 func (s *Server) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgResponse, error) {

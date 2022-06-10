@@ -18,7 +18,7 @@ func (s *Server) StreamFlowControl(stream pb.Sidecar_DocUploadStreamServer,
 
 	if unprocessedMsgs > thresholdOFF {
 
-		fmt.Printf("Flow OFF\n")
+		fmt.Printf("<< Flow OFF ")
 		stream.Send(&pb.DocUploadResponse{
 			Control: &pb.StreamControl{
 				Flow: pb.StreamFlow_OFF,
@@ -27,7 +27,7 @@ func (s *Server) StreamFlowControl(stream pb.Sidecar_DocUploadStreamServer,
 		})
 	} else if unprocessedMsgs <= thresholdON {
 
-		fmt.Printf("Flow ON\n")
+		fmt.Printf("<< Flow ON ")
 		stream.Send(&pb.DocUploadResponse{
 			Control: &pb.StreamControl{
 				Flow: pb.StreamFlow_ON,
@@ -42,13 +42,13 @@ func (s *Server) ThrottleGRPCSender(ctx context.Context,
 
 	var err error
 
-	numSeconds, err := time.ParseDuration(viper.GetString("nats.jetstream.throttleCheckPeriod"))
+	ns, err := time.ParseDuration(viper.GetString("nats.jetstream.flowControlTimeoutInNs"))
 	if err != nil {
 		return fmt.Errorf("Error Parsing Jetstream throttle check period: %w", err)
 	}
-	fmt.Printf("numSeconds: %v\n", numSeconds)
 
 	jsName := viper.GetString("nats.jetstream.name")
+	cName := viper.GetString("nats.jetstream.consumer.durableName")
 
 	utils.StartGoroutine("uploadDocsClientRecv", func() {
 	LOOP:
@@ -59,15 +59,15 @@ func (s *Server) ThrottleGRPCSender(ctx context.Context,
 					s.Logs.logger.Log("Done channel signaled: %v\n", err)
 				}
 				break LOOP
-			case <-time.After(numSeconds):
+			case <-time.After(ns):
 
-				jsInfo, err := s.Pubs.natsConn.js.StreamInfo(jsName)
+				cInfo, err := s.Pubs.natsConn.js.ConsumerInfo(jsName, cName)
 				if err != nil {
-					return
+					break
 				}
 
-				fmt.Printf("jsInfo.State.Msgs: %d\n", jsInfo.State.Msgs)
-				s.StreamFlowControl(stream, jsInfo.State.Msgs)
+				// fmt.Printf("c.NumPending: %d\n", cInfo.NumPending)
+				s.StreamFlowControl(stream, cInfo.NumPending)
 			}
 		}
 	})

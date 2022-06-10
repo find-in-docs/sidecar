@@ -27,8 +27,10 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 
 	ctx := stream.Context()
 
-	var flow pb.StreamFlow
 	var err error
+
+	var flow pb.StreamFlow
+	waitOnFlowOff := 1
 
 	fmt.Printf("In DownloadJS\n")
 	defer fmt.Printf("Exiting DownloadJS\n")
@@ -54,7 +56,17 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 				}
 
 				flow = response.Control.Flow
-				fmt.Printf(">>>> Flow Control: %s\n", pb.StreamFlow_name[int32(flow)])
+				if flow == pb.StreamFlow_OFF {
+					waitOnFlowOff = waitOnFlowOff << 1
+					if waitOnFlowOff > 8 {
+						waitOnFlowOff = 8
+					}
+				} else if flow == pb.StreamFlow_ON {
+					waitOnFlowOff = waitOnFlowOff >> 1
+				}
+
+				fmt.Printf("---- Flow Control: %s waitOnFlowOff: %d\n",
+					pb.StreamFlow_name[int32(flow)], waitOnFlowOff)
 			}
 		}
 	})
@@ -66,13 +78,16 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 	// Fetch messages in batches here
 	numMsgsToFetch := viper.GetInt("nats.jetstream.fetch.numMsgs")
 	maxWaitStr := viper.GetString("nats.jetstream.fetch.timeoutInSecs")
+	flowControlTimeoutInNs, err := time.ParseDuration(viper.GetString("nats.jetstream.flowControlTimeoutInNs"))
+	if err != nil {
+		return fmt.Errorf("Error parsing flow control timeout: %w", err)
+	}
+
 	maxWait, err := time.ParseDuration(maxWaitStr)
 	if err != nil {
 		return fmt.Errorf("Error parsing NATS max wait timeout value: %w", err)
 	}
 	natsMaxWait := nats.MaxWait(maxWait)
-
-	waitOnFlowOff := 1
 
 	topic := subs.currentStreamTopic
 	subscription := subs.subscriptionsJS[topic]
@@ -93,16 +108,8 @@ LOOP:
 			// time.Sleep(10 * time.Second)
 			break LOOP
 		default:
-			if flow == pb.StreamFlow_OFF {
-				waitOnFlowOff = waitOnFlowOff << 1
-				if waitOnFlowOff > 8 {
-					waitOnFlowOff = 8
-				}
-			} else if flow == pb.StreamFlow_ON {
-				waitOnFlowOff = waitOnFlowOff >> 1
-			}
-
-			time.Sleep(time.Second * time.Duration(waitOnFlowOff))
+			// fmt.Printf("waitOnFlowOff: %d\n", waitOnFlowOff)
+			time.Sleep(flowControlTimeoutInNs * time.Duration(waitOnFlowOff))
 		}
 
 		fmt.Printf("<<<<<<<<<<<<<<<< Fetching ... \n")

@@ -11,16 +11,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	chunkSize             = 5
-	allTopicsRecvChanSize = 32
-)
-
 func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (chan *pb.DocDownload, error) {
 
 	err := sc.AddJS(ctx, subject, durableName)
 	if err != nil {
 		return nil, fmt.Errorf("Error adding jetstream: %w", err)
+	}
+
+	flowControlTimeoutInNs, err := time.ParseDuration(viper.GetString("nats.jetstream.flowControlTimeoutInNs"))
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing flow control timeout: %w", err)
 	}
 
 	recvChanSize := viper.GetInt("nats.jetstream.recvChanSize")
@@ -65,14 +65,15 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 					sc.Logger.Log("Done channel signaled: %v\n", err)
 				}
 				break LOOP2
-			case <-time.After(time.Second):
+			case <-time.After(flowControlTimeoutInNs):
 
 				percentChannelUsed := int((cap(recvDocs) - len(recvDocs)) / (cap(recvDocs) * 100))
-				// fmt.Printf("cap: %d, l: %d, percentChannelUsed: %d\n",
-				//	c, l, percentChannelUsed)
+				fmt.Printf("cap: %d, l: %d, percentChannelUsed: %d: ",
+					cap(recvDocs), len(recvDocs), percentChannelUsed)
 
 				if percentChannelUsed > 50 {
 
+					fmt.Printf("Sending flow OFF\n")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_OFF,
@@ -84,6 +85,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 						break LOOP2
 					}
 				} else {
+					fmt.Printf("Sending flow ON\n")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_ON,
@@ -131,24 +133,40 @@ func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
 				}
 
 				flow = response.Control.Flow
-				fmt.Printf(">>>> Flow Control: %s\n", pb.StreamFlow_name[int32(flow)])
+				fmt.Printf("-- Flow %s --", pb.StreamFlow_name[int32(flow)])
 			}
 		}
 	})
 
 	documents := new(pb.Documents)
+	chunkSize := viper.GetInt("nats.jetstream.msgChunkSize")
+	fmt.Printf("chunkSize: %d\n", chunkSize)
 	docs := make([]*pb.Doc, chunkSize)
 	documents.Doc = docs
 	var count int
 	var msgNumber uint64
 	var numOutput int
 
-LOOP:
+	flowControlTimeoutInNs, err := time.ParseDuration(viper.GetString("nats.jetstream.flowControlTimeoutInNs"))
+	if err != nil {
+		return fmt.Errorf("Error parsing flow control timeout: %w", err)
+	}
+
+LOOP2:
 	for {
 		select {
 		case <-ctx.Done():
-			break LOOP
-		case doc := <-docsCh:
+			break LOOP2
+		case doc, ok := <-docsCh:
+
+			// Channel closed
+			if !ok {
+				break LOOP2
+			}
+
+			for flow == pb.StreamFlow_OFF {
+				time.Sleep(flowControlTimeoutInNs)
+			}
 
 			fmt.Println(count, doc)
 			docs[count] = doc
@@ -169,8 +187,8 @@ LOOP:
 				fmt.Printf("Sent\n")
 				count = 0
 				numOutput++
-				if numOutput == 2 {
-					break LOOP
+				if numOutput == 2000 {
+					break LOOP2
 				}
 			} else {
 
