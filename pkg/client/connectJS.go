@@ -68,12 +68,12 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 			case <-time.After(flowControlTimeoutInNs):
 
 				percentChannelUsed := int((cap(recvDocs) - len(recvDocs)) / (cap(recvDocs) * 100))
-				fmt.Printf("cap: %d, l: %d, percentChannelUsed: %d: ",
-					cap(recvDocs), len(recvDocs), percentChannelUsed)
+				// fmt.Printf("cap: %d, l: %d, percentChannelUsed: %d: ",
+				//	cap(recvDocs), len(recvDocs), percentChannelUsed)
 
 				if percentChannelUsed > 50 {
 
-					fmt.Printf("Sending flow OFF\n")
+					fmt.Printf("<< Flow OFF ")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_OFF,
@@ -85,7 +85,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 						break LOOP2
 					}
 				} else {
-					fmt.Printf("Sending flow ON\n")
+					fmt.Printf("<< Flow ON ")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_ON,
