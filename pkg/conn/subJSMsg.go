@@ -30,7 +30,6 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 	var err error
 
 	var flow pb.StreamFlow
-	waitOnFlowOff := 1
 
 	fmt.Printf("In DownloadJS\n")
 	defer fmt.Printf("Exiting DownloadJS\n")
@@ -56,17 +55,7 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 				}
 
 				flow = response.Control.Flow
-				if flow == pb.StreamFlow_OFF {
-					waitOnFlowOff = waitOnFlowOff << 1
-					if waitOnFlowOff > 8 {
-						waitOnFlowOff = 8
-					}
-				} else if flow == pb.StreamFlow_ON {
-					waitOnFlowOff = waitOnFlowOff >> 1
-				}
-
-				fmt.Printf("---- Flow Control: %s waitOnFlowOff: %d\n",
-					pb.StreamFlow_name[int32(flow)], waitOnFlowOff)
+				fmt.Printf("-- Flow %s --", pb.StreamFlow_name[int32(flow)])
 			}
 		}
 	})
@@ -108,8 +97,9 @@ LOOP:
 			// time.Sleep(10 * time.Second)
 			break LOOP
 		default:
-			// fmt.Printf("waitOnFlowOff: %d\n", waitOnFlowOff)
-			time.Sleep(flowControlTimeoutInNs * time.Duration(waitOnFlowOff))
+			for flow == pb.StreamFlow_OFF {
+				time.Sleep(flowControlTimeoutInNs)
+			}
 		}
 
 		fmt.Printf("<<<<<<<<<<<<<<<< Fetching ... \n")
