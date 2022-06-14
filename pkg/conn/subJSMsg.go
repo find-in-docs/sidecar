@@ -80,6 +80,7 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 
 	topic := subs.currentStreamTopic
 	subscription := subs.subscriptionsJS[topic]
+	fmt.Printf("topic: %s\n", topic)
 
 LOOP:
 	for {
@@ -102,7 +103,8 @@ LOOP:
 			}
 		}
 
-		fmt.Printf("<<<<<<<<<<<<<<<< Fetching ... \n")
+		fmt.Printf("<<<<<<<<<<<<<<<< Fetching numMsgsToFetch: %d, natsMaxWait: %d ... \n",
+			numMsgsToFetch, natsMaxWait)
 		ms, err := subscription.Fetch(numMsgsToFetch, natsMaxWait)
 		if err != nil {
 			fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
@@ -158,8 +160,12 @@ func (subs *Subs) AddJS(ctx context.Context, in *pb.AddJSMsg) (*pb.AddJSMsgRespo
 	subs.natsJSMsgs[topic] = topicMsgs
 
 	subscription, err := subs.natsConn.js.PullSubscribe(topic, workQueue,
-		// nats.PullMaxWaiting(128),
-		nats.DeliverAll())
+		// nats.PullMaxWaiting(512),
+		nats.ManualAck(),
+		nats.DeliverAll(),
+		// nats.MaxDeliver(32),
+		nats.BindStream("uploadDocs"),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("Could not subscribe: topic: %s workQueue: %s: %w",
 			topic, workQueue, err)
