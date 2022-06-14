@@ -56,7 +56,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 		}
 	})
 
-	utils.StartGoroutine("downloadDocsClientRecv", func() {
+	utils.StartGoroutine("downloadDocsClientSend", func() {
 	LOOP2:
 		for {
 			select {
