@@ -18,7 +18,7 @@ func (s *Server) StreamFlowControl(stream pb.Sidecar_DocUploadStreamServer,
 
 	if unprocessedMsgs > thresholdOFF {
 
-		fmt.Printf("<< Flow OFF ")
+		fmt.Printf("v")
 		stream.Send(&pb.DocUploadResponse{
 			Control: &pb.StreamControl{
 				Flow: pb.StreamFlow_OFF,
@@ -27,7 +27,7 @@ func (s *Server) StreamFlowControl(stream pb.Sidecar_DocUploadStreamServer,
 		})
 	} else if unprocessedMsgs <= thresholdON {
 
-		fmt.Printf("<< Flow ON ")
+		fmt.Printf("^")
 		stream.Send(&pb.DocUploadResponse{
 			Control: &pb.StreamControl{
 				Flow: pb.StreamFlow_ON,

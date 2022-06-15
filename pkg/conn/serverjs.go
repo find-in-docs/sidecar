@@ -86,7 +86,7 @@ LOOP2:
 				return fmt.Errorf("Error receiving from stream on server: %w", err)
 			}
 
-			fmt.Printf("DocUploadStream: Sending to NATS server\n")
+			fmt.Printf(">")
 			// Send document to NATS server
 			s.pubNATS(topic, name, docUpload)
 		}

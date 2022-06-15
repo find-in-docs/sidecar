@@ -51,6 +51,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 					break LOOP
 				}
 
+				fmt.Printf("<")
 				recvDocs <- docsDownload
 			}
 		}
@@ -73,7 +74,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 
 				if percentChannelUsed > 50 {
 
-					fmt.Printf("<< Flow OFF ")
+					fmt.Printf("v")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_OFF,
@@ -85,7 +86,7 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 						break LOOP2
 					}
 				} else {
-					fmt.Printf("<< Flow ON ")
+					fmt.Printf("^")
 					if err = stream.Send(&pb.DocDownloadResponse{
 						Control: &pb.StreamControl{
 							Flow: pb.StreamFlow_ON,
@@ -133,7 +134,11 @@ func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
 				}
 
 				flow = response.Control.Flow
-				fmt.Printf("-- Flow %s --", pb.StreamFlow_name[int32(flow)])
+				if flow == pb.StreamFlow_ON {
+					fmt.Printf("^")
+				} else {
+					fmt.Printf("v")
+				}
 			}
 		}
 	})
@@ -172,8 +177,6 @@ LOOP2:
 			docs[count] = doc
 			if count == chunkSize-1 {
 
-				fmt.Printf("Sending through stream\n")
-
 				if err = stream.Send(&pb.DocUpload{
 					Documents: documents,
 					MsgNumber: msgNumber,
@@ -181,10 +184,10 @@ LOOP2:
 
 					return fmt.Errorf("Error sending to document upload stream: %w", err)
 				}
+				fmt.Printf(">")
 
 				msgNumber++
 
-				fmt.Printf("Sent\n")
 				count = 0
 				numOutput++
 				if numOutput == 2000 {

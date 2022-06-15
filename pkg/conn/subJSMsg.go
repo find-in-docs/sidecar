@@ -55,7 +55,11 @@ func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
 				}
 
 				flow = response.Control.Flow
-				fmt.Printf("-- Flow %s --", pb.StreamFlow_name[int32(flow)])
+				if flow == pb.StreamFlow_ON {
+					fmt.Printf("^")
+				} else {
+					fmt.Printf("v")
+				}
 			}
 		}
 	})
@@ -93,9 +97,6 @@ LOOP:
 			}
 
 			unsubscribeJS(subs, subs.currentStreamTopic)
-
-			// Wait until client removes messages from channel
-			// time.Sleep(10 * time.Second)
 			break LOOP
 		default:
 			for flow == pb.StreamFlow_OFF {
@@ -103,15 +104,11 @@ LOOP:
 			}
 		}
 
-		fmt.Printf("<<<<<<<<<<<<<<<< Fetching numMsgsToFetch: %d, natsMaxWait: %d ... \n",
-			numMsgsToFetch, natsMaxWait)
 		ms, err := subscription.Fetch(numMsgsToFetch, natsMaxWait)
 		if err != nil {
 			fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
 				topic, err)
 		}
-		fmt.Printf("<<<<<<<<<<<<<<<<< Done fetching ... ms: %v err: %v\n",
-			ms, err)
 		if ms == nil {
 			continue
 		}
@@ -135,15 +132,7 @@ LOOP:
 				fmt.Printf("Error sending to document download stream: %v\n", err)
 				break LOOP
 			}
-
-			/*
-				// Stream and Consumer sequences.
-				fmt.Printf("Stream seq: %s:%d, Consumer seq: %s:%d\n",
-					meta.Stream, meta.Sequence.Stream, meta.Consumer,
-					meta.Sequence.Consumer)
-				fmt.Printf("Pending: %d\n", meta.NumPending)
-				fmt.Printf("Pending: %d\n", meta.NumDelivered)
-			*/
+			fmt.Printf("<")
 		}
 	}
 
