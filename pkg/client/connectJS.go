@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/find-in-docs/sidecar/pkg/utils"
@@ -105,7 +106,10 @@ func (sc *SC) ReceiveDocs(ctx context.Context, subject, durableName string) (cha
 	return recvDocs, nil
 }
 
-func (sc *SC) UploadDocs(ctx context.Context, docsCh <-chan *pb.Doc) error {
+func (sc *SC) UploadDocs(wg sync.WaitGroup, docsCh <-chan *pb.Doc) error {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	var flow pb.StreamFlow
 	stream, err := sc.Client.DocUploadStream(ctx)
@@ -166,6 +170,7 @@ LOOP2:
 
 			// Channel closed
 			if !ok {
+
 				break LOOP2
 			}
 
@@ -200,6 +205,7 @@ LOOP2:
 		}
 	}
 
+	wg.Done()
 	return nil
 }
 

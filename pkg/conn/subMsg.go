@@ -120,14 +120,6 @@ func (subs *Subs) Unsubscribe(logger *log.Logger, in *pb.UnsubMsg) (*pb.UnsubMsg
 
 	topic := in.GetTopic()
 
-	if _, ok := subs.subscriptions[topic]; !ok {
-		return nil, fmt.Errorf("Error - topic not found to unsubscribe:\n\ttopic: %s\n", topic)
-	}
-
-	subs.subscriptions[topic].Drain()
-	subs.subscriptions[topic].Unsubscribe()
-	delete(subs.subscriptions, topic)
-
 	close(subs.natsMsgs[topic])
 	delete(subs.natsMsgs, topic)
 

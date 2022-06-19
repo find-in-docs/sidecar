@@ -19,8 +19,8 @@ func unsubscribeJS(subs *Subs, topic string) {
 	subs.subscriptionsJS[topic].Unsubscribe()
 	delete(subs.subscriptionsJS, topic)
 
-	close(subs.natsJSMsgs[topic])
-	delete(subs.natsJSMsgs, topic)
+	// close(subs.natsJSMsgs[topic])
+	// delete(subs.natsJSMsgs, topic)
 }
 
 func (subs *Subs) DownloadJS(stream pb.Sidecar_DocDownloadStreamServer) error {
@@ -108,6 +108,7 @@ LOOP:
 		if err != nil {
 			fmt.Printf("Error fetching from topic: %s\n\terr: %v\n",
 				topic, err)
+			break LOOP
 		}
 		if ms == nil {
 			continue
