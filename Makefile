@@ -17,7 +17,7 @@ init:
 	- rm go.mod
 	- rm go.sum
 	go mod init github.com/find-in-docs/sidecar
-	go mod tidy -compat=1.17
+	go mod tidy
 
 genstubs:
 	protoc --go_out=. --go_opt=paths=source_relative \
@@ -42,4 +42,4 @@ clean:
 	go clean
 	rm ${BIN_NAME}
 	go clean -cache -modcache -i -r
-	go mod tidy -compat=1.17
+	go mod tidy
