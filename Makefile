@@ -40,6 +40,6 @@ test:
 
 clean:
 	go clean
-	rm ${BIN_NAME}
+	- rm ${BIN_NAME}
 	go clean -cache -modcache -i -r
 	go mod tidy
