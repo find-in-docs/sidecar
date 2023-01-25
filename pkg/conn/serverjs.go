@@ -6,7 +6,7 @@ import (
 	"io"
 
 	pb "github.com/find-in-docs/sidecar/protos/v1/messages"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
