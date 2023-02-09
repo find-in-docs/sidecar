@@ -73,7 +73,7 @@ func (pubs *Pubs) Publish(ctx context.Context, logger *log.Logger, in *pb.PubMsg
 	}
 
 	var retryFunc Effector
-	retryFunc = RetryFunc(pubs.Retry, int(*retryBehavior.RetryNum), retryBehavior.RetryDelay.AsDuration())
+	retryFunc = RetryFunc(pubs.Retry, int(retryBehavior.RetryNum), retryBehavior.RetryDelay.AsDuration())
 
 	reply, err := retryFunc(ctx, &msg)
 	header := pb.Header{

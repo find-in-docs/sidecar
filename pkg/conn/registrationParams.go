@@ -24,12 +24,12 @@ func NewRegParams(circuitFailureThreshold uint32,
 	}
 
 	retryBehavior := pb.RetryBehavior{
-		RetryNum:   &retryNum,
+		RetryNum:   retryNum,
 		RetryDelay: durationpb.New(retryDelayDuration),
 	}
 
 	return &pb.RegistrationParams{
-		CircuitFailureThreshold: &circuitFailureThreshold,
+		CircuitFailureThreshold: circuitFailureThreshold,
 		DebounceDelay:           durationpb.New(debounceDelayDuration),
 		Retry:                   &retryBehavior,
 	}, nil

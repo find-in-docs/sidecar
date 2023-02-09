@@ -50,15 +50,15 @@ message ResponseHeader {
 }
 
 message RetryBehavior{
-	optional uint32 retryNum = 1;
-	optional google.protobuf.Duration retryDelay = 2;
+	uint32 retryNum = 1;
+	google.protobuf.Duration retryDelay = 2;
 }
 
 message RegistrationParams {
 
-	optional uint32 circuitFailureThreshold = 3;
-	optional google.protobuf.Duration debounceDelay = 4;
-	optional RetryBehavior Retry = 5;
+	uint32 circuitFailureThreshold = 3;
+	google.protobuf.Duration debounceDelay = 4;
+	RetryBehavior Retry = 5;
 }	
 
 message RegistrationMsg {
@@ -82,7 +82,7 @@ message PubMsg {
 	Header header = 1;
 	string topic = 2;
 	bytes msg = 3;
-	optional RetryBehavior Retry = 4;
+	RetryBehavior Retry = 4;
 }
 
 message PubMsgResponse {
@@ -97,7 +97,7 @@ message PubJSMsg {
 	string topic = 2;
 	string workQueue = 3;
 	bytes msg = 4;
-	optional RetryBehavior Retry = 5;
+	RetryBehavior Retry = 5;
 }
 
 message PubJSMsgResponse {
