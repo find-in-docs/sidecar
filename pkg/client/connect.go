@@ -87,11 +87,11 @@ func DefaultRegParams(sc *SC) (*pb.RegistrationParams, error) {
 	retryDelay := durationpb.New(retryDelayDuration)
 
 	return &pb.RegistrationParams{
-		CircuitFailureThreshold: &circuitConsecutiveFailures,
+		CircuitFailureThreshold: circuitConsecutiveFailures,
 		DebounceDelay:           debounceDelay,
 
 		Retry: &pb.RetryBehavior{
-			RetryNum:   &retryNum,
+			RetryNum:   retryNum,
 			RetryDelay: retryDelay,
 		},
 	}, nil
