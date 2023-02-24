@@ -55,7 +55,7 @@ clean:
 	go clean -cache -modcache -i -r
 	go mod tidy
 
-minikube: 
+upload: init
 	echo "Start building on minikube ..."
 	docker build -t sidecar -f ./Dockerfile .
 	
@@ -64,4 +64,6 @@ minikube:
 	# rg --iglob "*.go" -o -I -N "[\"]github([^\"]+)[\"]" | sed '/^$/d' | sed 's/\"//g' | awk '{print "RUN go get " $0}'
 	
 	# We specify image-pull-policy-Never because we're actually building the image on minikube.
-	kubectl run sidecar --image=sidecar:latest --image-pull-policy=Never --restart=Never
+	# kubectl run sidecar --image=sidecar:latest --image-pull-policy=Never --restart=Never
+	
+	# kubectl apply -f manifests/minikube
