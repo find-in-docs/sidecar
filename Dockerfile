@@ -35,6 +35,12 @@ RUN mkdir -p protos/v1/messages
 COPY pkg/ /app/pkg/
 COPY protos/ /app/protos/
 
+# This file contains the DNS server information. It is used by the persistlogs
+# service to:
+#   - Complete the Fully Qualified Domain Name of the request
+#   - Locate the IP address of the DNS server
+COPY manifests/minikube/sidecar_resolv.conf /etc/resolv.conf
+
 # Git config change to get over the issue of "Could not resolve github.com".
 # This was added to .bashrc instead.
 # RUN git config --global --unset http.proxy 
@@ -57,6 +63,8 @@ RUN protoc \
    			--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	 			protos/v1/messages/sidecar.proto
 
-RUN tree /app
-RUN ls -l /app
+# RUN tree /app
+# RUN ls -l /app
 RUN go build -o sidecar ./pkg/main/main.go
+
+CMD ["./sidecar"]
