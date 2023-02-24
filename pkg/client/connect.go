@@ -23,6 +23,7 @@ type SC struct {
 func InitSidecar(serviceName string, regParams *pb.RegistrationParams) (*SC, error) {
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
+  fmt.Printf("sidecarServiceAddr: %s\n", sidecarServiceAddr)
 	conn, err := Connect(serviceName, sidecarServiceAddr, regParams)
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to client: %w\n", err)
@@ -53,7 +54,7 @@ func Connect(serviceName string, serverAddr string, regParams *pb.RegistrationPa
 
 	// var opts []grpc.DialOption
 
-	fmt.Printf("serverAddr: %s\n", serverAddr)
+  fmt.Printf("%s: serverAddr: %s\n", serviceName, serverAddr)
 	conn, err := grpc.Dial(serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
