@@ -7,19 +7,16 @@ import (
 )
 
 func Load() {
-	configFilename := "config.yaml"
-
-	viper.SetConfigName("config")
+	viper.SetConfigName("sidecar-config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.sidecar")
+	viper.AddConfigPath("/mnt/")
 	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Printf("Config file %s was not found.\n", configFilename)
+      fmt.Printf("sidecar: Config file was not found.\n")
 		} else {
-			panic(fmt.Errorf("Fatal error reading config file %s: error: %w\n",
-				configFilename, err))
+			panic(fmt.Errorf("Fatal error reading config file: error: %w\n", err))
 		}
 	}
 }
