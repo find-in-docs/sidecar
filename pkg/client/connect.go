@@ -20,14 +20,30 @@ type SC struct {
 	Logger *Logger
 }
 
-func InitSidecar(serviceName string, regParams *pb.RegistrationParams) (*SC, error) {
+func connectToSidecar(serviceName string, regParams *pb.RegistrationParams) *SC {
 
 	sidecarServiceAddr := viper.GetString("sidecarServiceAddr")
   fmt.Printf("sidecarServiceAddr: %s\n", sidecarServiceAddr)
-	conn, err := Connect(serviceName, sidecarServiceAddr, regParams)
-	if err != nil {
-		return nil, fmt.Errorf("Error connecting to client: %w\n", err)
-	}
+
+  reTryNum := 0
+  tickerCh := time.Tick(3 * time.Second)
+  for _ := range tickerCh {
+
+    conn, err := Connect(serviceName, sidecarServiceAddr, regParams)
+    if err != nil {
+      fmt.Printf("Error connecting to sidecar. RetryNum: %d, Error: %w", retryNum, err)
+      return nil
+    } else {
+      return conn
+    }
+
+    retryNum++
+  }
+}
+
+func InitSidecar(serviceName string, regParams *pb.RegistrationParams) (*SC, error) {
+
+  conn := connectToSidecar(serviceName, regParams)
 
 	client := pb.NewSidecarClient(conn)
 	fmt.Printf("GRPC connection to sidecar created\n")

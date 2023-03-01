@@ -17,8 +17,8 @@ type Conn struct {
 func NewNATSConn(url string) (*Conn, error) {
 
 	nc, err := nats.Connect(url, nats.RetryOnFailedConnect(true),
-		nats.MaxReconnects(10),
-		nats.ReconnectWait(3*time.Second),
+		// nats.MaxReconnects(10),   // Defaults to 60 attempts
+		nats.ReconnectWait(3*time.Second),  // Defaults to 2s
 		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
 			fmt.Printf("Got disconnected! Reason: %q\n", err)
 		}),
