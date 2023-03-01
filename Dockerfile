@@ -39,7 +39,7 @@ COPY protos/ /app/protos/
 # service to:
 #   - Complete the Fully Qualified Domain Name of the request
 #   - Locate the IP address of the DNS server
-COPY manifests/minikube/sidecar_resolv.conf /etc/resolv.conf
+COPY manifests/minikube/resolv.conf /etc/resolv.conf
 
 # Git config change to get over the issue of "Could not resolve github.com".
 # This was added to .bashrc instead.
